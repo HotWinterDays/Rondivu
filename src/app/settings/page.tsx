@@ -2,21 +2,20 @@ import { redirect } from "next/navigation";
 
 import { EmailConfigForm } from "@/components/EmailConfigForm";
 import { TestEmailForm } from "@/components/TestEmailForm";
-import { isAdminPasswordConfigured, verifyAdminSession } from "@/lib/auth";
+import { hasAnyUser, isAdminPasswordConfigured, needsMigration, requirePermission } from "@/lib/auth";
 import { getEmailConfig } from "@/lib/settings";
 import { isEmailConfigured } from "@/lib/email";
 import { logoutAction } from "@/app/admin/logout/actions";
 
 export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
-  const passwordConfigured = await isAdminPasswordConfigured();
-  if (!passwordConfigured) {
+  if (!(await hasAnyUser()) && !(await isAdminPasswordConfigured())) {
     redirect("/admin/setup?returnTo=/settings");
   }
-  const valid = await verifyAdminSession();
-  if (!valid) {
-    redirect("/admin/login?returnTo=/settings");
+  if (await needsMigration()) {
+    redirect("/admin/migrate?returnTo=/settings");
   }
+  await requirePermission("modifySettings", "/settings");
 
   const [config, emailConfigured] = await Promise.all([getEmailConfig(), isEmailConfigured()]);
 

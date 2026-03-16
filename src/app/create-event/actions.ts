@@ -3,10 +3,13 @@
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
+import { requirePermission } from "@/lib/auth";
 import { newAdminKey, newGuestToken, newPublicId } from "@/lib/ids";
 import { createEventSchema } from "@/lib/validation";
 
 export async function createEventAction(formData: FormData) {
+  await requirePermission("createEvent", "/create-event");
+
   const rawGuests = formData.get("guests");
   const guestsJson = typeof rawGuests === "string" ? rawGuests : "[]";
 

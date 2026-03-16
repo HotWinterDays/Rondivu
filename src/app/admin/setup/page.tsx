@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { isAdminPasswordConfigured } from "@/lib/auth";
+import { hasAnyUser, isAdminPasswordConfigured } from "@/lib/auth";
 import { setupAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -16,23 +16,28 @@ export default async function AdminSetupPage({
   const error = typeof raw.error === "string" ? raw.error : raw.error?.[0];
   const safeReturnTo = returnTo?.startsWith("/") ? returnTo : "/settings";
 
-  if (await isAdminPasswordConfigured()) {
+  if (await hasAnyUser()) {
     redirect("/admin/login");
+  }
+  if (await isAdminPasswordConfigured()) {
+    redirect("/admin/migrate");
   }
 
   const errorMessage =
-    error === "too_short"
-      ? "Password must be at least 8 characters."
-      : error === "mismatch"
-        ? "Passwords do not match."
-        : null;
+    error === "invalid_email"
+      ? "Enter a valid email address."
+      : error === "too_short"
+        ? "Password must be at least 8 characters."
+        : error === "mismatch"
+          ? "Passwords do not match."
+          : null;
 
   return (
     <div className="mx-auto w-full max-w-md">
       <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-white/10 dark:bg-zinc-950">
         <h1 className="text-2xl font-semibold tracking-tight">Set up admin</h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          Create a password to protect Settings and event dashboards. You’ll use this to sign in.
+          Create the first admin account. Use your email and a password to sign in.
         </p>
 
         {errorMessage && (
@@ -44,6 +49,20 @@ export default async function AdminSetupPage({
         <form action={setupAction} className="mt-8 space-y-6">
           <input type="hidden" name="returnTo" value={safeReturnTo} />
           <div>
+            <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-zinc-900 dark:text-zinc-100">
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoFocus
+              className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-white/20 dark:focus:ring-white/10"
+              placeholder="admin@example.com"
+            />
+          </div>
+          <div>
             <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-zinc-900 dark:text-zinc-100">
               Password
             </label>
@@ -53,8 +72,7 @@ export default async function AdminSetupPage({
               type="password"
               required
               minLength={8}
-              autoFocus
-              className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-950 shadow-sm outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-white/20 dark:focus:ring-white/10"
+              className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-white/20 dark:focus:ring-white/10"
               placeholder="At least 8 characters"
             />
           </div>
@@ -68,7 +86,7 @@ export default async function AdminSetupPage({
               type="password"
               required
               minLength={8}
-              className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-950 shadow-sm outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-white/20 dark:focus:ring-white/10"
+              className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-white/20 dark:focus:ring-white/10"
               placeholder="Repeat password"
             />
           </div>
@@ -77,7 +95,7 @@ export default async function AdminSetupPage({
               type="submit"
               className="inline-flex h-11 items-center justify-center rounded-full bg-zinc-950 px-6 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
             >
-              Create password
+              Create admin account
             </button>
             <Link
               href="/"

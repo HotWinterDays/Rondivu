@@ -41,6 +41,46 @@ model Event {
   @@index([publicId])
 }
 
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String
+
+  role             UserRole @default(USER)
+  canCreateEvent   Boolean  @default(false)
+  canModifySettings Boolean @default(false)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  invitedUsers     UserInvite[] @relation("InvitedBy")
+}
+
+model UserInvite {
+  id               String   @id @default(cuid())
+  email            String
+  token            String   @unique
+
+  invitedById      String
+  invitedBy        User     @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  canCreateEvent   Boolean  @default(false)
+  canModifySettings Boolean @default(false)
+
+  expiresAt        DateTime
+  usedAt           DateTime?
+
+  createdAt        DateTime @default(now())
+
+  @@index([token])
+  @@index([email])
+}
+
 model AppSetting {
   id    String @id @default(cuid())
   key   String @unique

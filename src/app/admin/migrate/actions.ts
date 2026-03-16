@@ -5,45 +5,36 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
   createUserSession,
-  hasAnyUser,
-  isAdminPasswordConfigured,
+  needsMigration,
   sessionFromUser,
   setAdminSessionCookie,
+  verifyAdminPassword,
 } from "@/lib/auth";
-import { setSetting } from "@/lib/settings";
+import { getSetting, setSetting } from "@/lib/settings";
 
-export async function setupAction(formData: FormData) {
+const HASH_KEY = "admin_password_hash";
+
+export async function migrateAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "").trim();
-  const confirm = String(formData.get("confirm") ?? "").trim();
   const returnTo = String(formData.get("returnTo") ?? "/settings").trim() || "/settings";
 
-  if (await hasAnyUser()) {
+  if (!(await needsMigration())) {
     redirect("/admin/login");
   }
 
-  if (await isAdminPasswordConfigured()) {
-    redirect("/admin/migrate");
-  }
-
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    redirect("/admin/setup?error=invalid_email");
+    redirect("/admin/migrate?error=invalid_email");
   }
 
-  if (password.length < 8) {
-    redirect("/admin/setup?error=too_short");
+  if (!(await verifyAdminPassword(password))) {
+    redirect(`/admin/migrate?error=invalid&returnTo=${encodeURIComponent(returnTo)}`);
   }
 
-  if (password !== confirm) {
-    redirect(`/admin/setup?error=mismatch&returnTo=${encodeURIComponent(returnTo)}`);
-  }
+  const hash = await getSetting(HASH_KEY);
+  if (!hash) redirect("/admin/login");
 
-  const bcrypt = await import("bcryptjs");
-  const passwordHash = await bcrypt.hash(password, 12);
-
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  await setSetting("admin_session_secret", Buffer.from(bytes).toString("base64url"));
+  const passwordHash = hash;
 
   const user = await prisma.user.create({
     data: {
@@ -55,6 +46,7 @@ export async function setupAction(formData: FormData) {
     },
   });
 
+  await setSetting(HASH_KEY, "");
   const session = sessionFromUser(user);
   const token = await createUserSession(session);
   await setAdminSessionCookie(token);

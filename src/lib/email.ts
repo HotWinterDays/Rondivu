@@ -218,6 +218,76 @@ async function sendViaResend(payload: {
   }
 }
 
+export type UserInviteParams = {
+  inviteeEmail: string;
+  inviterEmail: string;
+  acceptUrl: string;
+};
+
+export async function sendUserInvite(params: UserInviteParams): Promise<SendResult> {
+  const cfg = await getConfig();
+
+  if (cfg.provider === "none") {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[email] no-op: would send user invite to", params.inviteeEmail);
+    }
+    return { ok: true };
+  }
+
+  const from = cfg.emailFrom;
+  const subject = `You're invited to Rondivu`;
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #333; max-width: 500px; margin: 0 auto; padding: 20px;">
+  <p>Hi,</p>
+  <p>${escapeHtml(params.inviterEmail)} has invited you to join Rondivu.</p>
+  <p>Use the link below to set your password and accept the invite:</p>
+  <p><a href="${escapeHtml(params.acceptUrl)}" style="display: inline-block; background: #18181b; color: white; padding: 10px 20px; border-radius: 9999px; text-decoration: none; margin-top: 8px;">Accept invite</a></p>
+  <p style="margin-top: 24px; font-size: 14px; color: #666;">This invite was sent by Rondivu.</p>
+</body>
+</html>`;
+
+  const text = `
+Hi,
+
+${params.inviterEmail} has invited you to join Rondivu.
+
+Accept the invite here: ${params.acceptUrl}
+
+—
+Sent by Rondivu
+`.trim();
+
+  if (cfg.provider === "smtp") {
+    return sendViaSmtp({
+      to: params.inviteeEmail,
+      from,
+      subject,
+      html,
+      text,
+      cfg,
+    });
+  }
+
+  if (cfg.provider === "resend") {
+    return sendViaResend({
+      to: params.inviteeEmail,
+      from,
+      subject,
+      html,
+      text,
+      cfg,
+    });
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("[email] unknown provider, no-op. Would send invite to", params.inviteeEmail);
+  }
+  return { ok: true };
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

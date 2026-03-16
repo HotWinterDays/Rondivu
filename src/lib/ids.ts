@@ -16,3 +16,7 @@ export function newGuestToken() {
   return randomId(18);
 }
 
+export function newInviteToken() {
+  return randomId(24);
+}
+

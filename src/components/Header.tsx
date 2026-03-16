@@ -3,9 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export function Header() {
+type HeaderProps = {
+  canCreateEvent?: boolean;
+  canModifySettings?: boolean;
+  showUsers?: boolean;
+};
+
+export function Header({ canCreateEvent, canModifySettings, showUsers }: HeaderProps) {
   const pathname = usePathname();
   const isGuestView = pathname?.startsWith("/e/");
+
+  const showNav = !isGuestView && (canCreateEvent || canModifySettings || showUsers);
 
   return (
     <header className="px-6 py-6">
@@ -13,14 +21,23 @@ export function Header() {
         <Link href="/" className="font-medium tracking-tight">
           Rondivu
         </Link>
-        {!isGuestView && (
+        {showNav && (
           <nav className="flex items-center gap-4 text-sm text-zinc-600 dark:text-zinc-400">
-            <Link className="hover:text-zinc-950 dark:hover:text-zinc-50" href="/create-event">
-              Create event
-            </Link>
-            <Link className="hover:text-zinc-950 dark:hover:text-zinc-50" href="/settings">
-              Settings
-            </Link>
+            {canCreateEvent && (
+              <Link className="hover:text-zinc-950 dark:hover:text-zinc-50" href="/create-event">
+                Create event
+              </Link>
+            )}
+            {canModifySettings && (
+              <Link className="hover:text-zinc-950 dark:hover:text-zinc-50" href="/settings">
+                Settings
+              </Link>
+            )}
+            {showUsers && (
+              <Link className="hover:text-zinc-950 dark:hover:text-zinc-50" href="/users">
+                Users
+              </Link>
+            )}
           </nav>
         )}
       </div>

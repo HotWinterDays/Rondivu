@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { SendInviteButton } from "@/components/SendInviteButton";
-import { isAdminPasswordConfigured, verifyAdminSession } from "@/lib/auth";
+import { hasAnyUser, isAdminPasswordConfigured, needsMigration, verifyAdminSession } from "@/lib/auth";
 import { isEmailConfigured } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
@@ -17,14 +17,16 @@ export default async function ManageEventPage({
   const { publicId } = await params;
   const { key, status } = await searchParams;
 
-  const passwordConfigured = await isAdminPasswordConfigured();
-  if (passwordConfigured) {
-    const valid = await verifyAdminSession();
-    if (!valid) {
-      redirect(`/admin/login?returnTo=${encodeURIComponent(`/event/${publicId}/manage?key=${key ?? ""}&status=${status ?? "ALL"}`)}`);
-    }
-  } else {
-    redirect(`/admin/setup?returnTo=${encodeURIComponent(`/event/${publicId}/manage?key=${key ?? ""}&status=${status ?? "ALL"}`)}`);
+  const returnTo = `/event/${publicId}/manage?key=${key ?? ""}&status=${status ?? "ALL"}`;
+  if (!(await hasAnyUser()) && !(await isAdminPasswordConfigured())) {
+    redirect(`/admin/setup?returnTo=${encodeURIComponent(returnTo)}`);
+  }
+  if (await needsMigration()) {
+    redirect(`/admin/migrate?returnTo=${encodeURIComponent(returnTo)}`);
+  }
+  const valid = await verifyAdminSession();
+  if (!valid) {
+    redirect(`/admin/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
 
   const event = await prisma.event.findUnique({
