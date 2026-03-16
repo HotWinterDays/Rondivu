@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { SendInviteButton } from "@/components/SendInviteButton";
+import { isAdminPasswordConfigured, verifyAdminSession } from "@/lib/auth";
 import { isEmailConfigured } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
@@ -15,6 +16,13 @@ export default async function ManageEventPage({
 }) {
   const { publicId } = await params;
   const { key, status } = await searchParams;
+
+  if (isAdminPasswordConfigured()) {
+    const valid = await verifyAdminSession();
+    if (!valid) {
+      redirect(`/admin/login?returnTo=${encodeURIComponent(`/event/${publicId}/manage?key=${key ?? ""}&status=${status ?? "ALL"}`)}`);
+    }
+  }
 
   const event = await prisma.event.findUnique({
     where: { publicId },
@@ -61,7 +69,7 @@ export default async function ManageEventPage({
     );
   }
 
-  const emailConfigured = isEmailConfigured();
+  const emailConfigured = await isEmailConfigured();
   const filteredGuests =
     status && status !== "ALL" ? event.guests.filter((g) => g.status === status) : event.guests;
 
@@ -92,7 +100,13 @@ export default async function ManageEventPage({
               Admin dashboard · Save this URL. Anyone with it can view guests and RSVP links.
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+            <Link
+              href="/settings"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-zinc-200 px-4 text-sm font-medium hover:bg-zinc-50 dark:border-white/10 dark:hover:bg-white/5"
+            >
+              Settings
+            </Link>
             <Link
               href={`/e/${encodeURIComponent(publicId)}`}
               className="inline-flex h-10 items-center justify-center rounded-full border border-zinc-200 px-4 text-sm font-medium hover:bg-zinc-50 dark:border-white/10 dark:hover:bg-white/5"

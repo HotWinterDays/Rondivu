@@ -1,3 +1,5 @@
+import { getEmailConfig } from "@/lib/settings";
+
 export type InviteParams = {
   guestName: string;
   guestEmail: string | null;
@@ -9,33 +11,47 @@ export type InviteParams = {
 
 export type SendResult = { ok: true } | { ok: false; error: string };
 
-function getBaseUrl(): string {
-  return process.env.APP_URL ?? process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+async function getConfig() {
+  const db = await getEmailConfig();
+  const fromEnv = (key: string) => process.env[key] ?? "";
+  return {
+    provider: db.provider || (fromEnv("EMAIL_PROVIDER") || "none").toLowerCase(),
+    emailFrom: db.emailFrom || fromEnv("EMAIL_FROM") || "VyteKit <noreply@localhost>",
+    appUrl: fromEnv("APP_URL") || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
+    smtpHost: db.smtpHost || fromEnv("SMTP_HOST"),
+    smtpPort: db.smtpPort || fromEnv("SMTP_PORT") || "587",
+    smtpSecure: db.smtpSecure || fromEnv("SMTP_SECURE") || "false",
+    smtpUser: db.smtpUser || fromEnv("SMTP_USER"),
+    smtpPass: db.smtpPass || fromEnv("SMTP_PASS"),
+    resendApiKey: db.resendApiKey || fromEnv("RESEND_API_KEY"),
+  };
 }
 
 export function buildRsvpUrl(publicId: string, guestToken: string): string {
-  const base = getBaseUrl();
+  const base =
+    process.env.APP_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
   return `${base.replace(/\/$/, "")}/e/${encodeURIComponent(publicId)}/g/${encodeURIComponent(guestToken)}`;
 }
 
-export function isEmailConfigured(): boolean {
-  const provider = (process.env.EMAIL_PROVIDER ?? "none").toLowerCase();
-  if (provider === "none") return false;
-  if (provider === "smtp") {
-    return !!(process.env.SMTP_HOST && process.env.EMAIL_FROM);
-  }
-  if (provider === "resend") {
-    return !!(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
-  }
+export async function buildRsvpUrlFromConfig(publicId: string, guestToken: string): Promise<string> {
+  const cfg = await getConfig();
+  const base = process.env.APP_URL ?? cfg.appUrl ?? "http://localhost:3000";
+  return `${base.replace(/\/$/, "")}/e/${encodeURIComponent(publicId)}/g/${encodeURIComponent(guestToken)}`;
+}
+
+export async function isEmailConfigured(): Promise<boolean> {
+  const cfg = await getConfig();
+  if (cfg.provider === "none") return false;
+  if (cfg.provider === "smtp") return !!(cfg.smtpHost && cfg.emailFrom);
+  if (cfg.provider === "resend") return !!(cfg.resendApiKey && cfg.emailFrom);
   return false;
 }
 
 export async function sendInvite(params: InviteParams): Promise<SendResult> {
-  const provider = (process.env.EMAIL_PROVIDER ?? "none").toLowerCase();
+  const cfg = await getConfig();
 
-  if (provider === "none") {
+  if (cfg.provider === "none") {
     if (process.env.NODE_ENV === "development") {
       console.log("[email] no-op: would send invite to", params.guestEmail, "for", params.eventTitle);
     }
@@ -46,7 +62,7 @@ export async function sendInvite(params: InviteParams): Promise<SendResult> {
     return { ok: false, error: "Guest has no email address" };
   }
 
-  const from = process.env.EMAIL_FROM ?? "VyteKit <noreply@localhost>";
+  const from = cfg.emailFrom;
   const subject = `You're invited: ${params.eventTitle}`;
   const startStr = params.startTime.toLocaleString(undefined, {
     weekday: "long",
@@ -82,23 +98,25 @@ RSVP here: ${params.rsvpUrl}
 Sent by VyteKit
 `.trim();
 
-  if (provider === "smtp") {
+  if (cfg.provider === "smtp") {
     return sendViaSmtp({
       to: params.guestEmail,
       from,
       subject,
       html,
       text,
+      cfg,
     });
   }
 
-  if (provider === "resend") {
+  if (cfg.provider === "resend") {
     return sendViaResend({
       to: params.guestEmail,
       from,
       subject,
       html,
       text,
+      cfg,
     });
   }
 
@@ -108,26 +126,27 @@ Sent by VyteKit
   return { ok: true };
 }
 
+type SmtpCfg = Awaited<ReturnType<typeof getConfig>>;
+
 async function sendViaSmtp(payload: {
   to: string;
   from: string;
   subject: string;
   html: string;
   text: string;
+  cfg: SmtpCfg;
 }): Promise<SendResult> {
   try {
     const nodemailer = await import("nodemailer");
-    const host = process.env.SMTP_HOST!;
-    const port = parseInt(process.env.SMTP_PORT ?? "587", 10);
-    const secure = process.env.SMTP_SECURE === "true" || process.env.SMTP_SECURE === "1";
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
+    const { cfg } = payload;
+    const port = parseInt(cfg.smtpPort || "587", 10);
+    const secure = cfg.smtpSecure === "true" || cfg.smtpSecure === "1";
 
     const transporter = nodemailer.default.createTransport({
-      host,
+      host: cfg.smtpHost,
       port,
       secure,
-      auth: user && pass ? { user, pass } : undefined,
+      auth: cfg.smtpUser && cfg.smtpPass ? { user: cfg.smtpUser, pass: cfg.smtpPass } : undefined,
     });
 
     await transporter.sendMail({
@@ -150,11 +169,11 @@ async function sendViaResend(payload: {
   subject: string;
   html: string;
   text: string;
+  cfg: SmtpCfg;
 }): Promise<SendResult> {
   try {
     const { Resend } = await import("resend");
-    const apiKey = process.env.RESEND_API_KEY!;
-    const resend = new Resend(apiKey);
+    const resend = new Resend(payload.cfg.resendApiKey);
     const result = await resend.emails.send({
       from: payload.from,
       to: payload.to,

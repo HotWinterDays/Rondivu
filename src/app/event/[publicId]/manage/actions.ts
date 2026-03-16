@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { buildRsvpUrl, isEmailConfigured, sendInvite } from "@/lib/email";
+import { buildRsvpUrlFromConfig, isEmailConfigured, sendInvite } from "@/lib/email";
 
 export async function sendInviteAction(formData: FormData) {
   const publicId = String(formData.get("publicId") ?? "");
@@ -34,7 +34,7 @@ export async function sendInviteAction(formData: FormData) {
     return { ok: false as const, error: "Email is not configured. Set EMAIL_PROVIDER and provider-specific env vars." };
   }
 
-  const rsvpUrl = buildRsvpUrl(publicId, guestToken);
+  const rsvpUrl = await buildRsvpUrlFromConfig(publicId, guestToken);
   const result = await sendInvite({
     guestName: guest.name,
     guestEmail: guest.email,

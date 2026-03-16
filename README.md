@@ -8,6 +8,8 @@ Self-hosted, minimalist invite and RSVP kit for creating events, managing guest 
 - Per-guest RSVP links (private; not exposed on the public event page)
 - Admin dashboard with counts and copy/send invite
 - Pluggable email: SMTP, Resend, or copy-link-only (no email)
+- Email config via Settings UI (stored in DB) or env vars
+- Optional admin password to protect Settings and event dashboards
 
 ## Local development
 
@@ -36,6 +38,7 @@ Data persists in the `vytekit_data` volume.
 | `APP_URL` | Base URL for invite links (e.g. `https://yourdomain.com`) |
 | `EMAIL_PROVIDER` | `none`, `smtp`, or `resend` |
 | `EMAIL_FROM` | Sender address (e.g. `VyteKit <noreply@yourdomain.com>`) |
+| `ADMIN_PASSWORD` | Optional. When set, protects Settings and event dashboards with a login |
 
 ### SMTP (`EMAIL_PROVIDER=smtp`)
 

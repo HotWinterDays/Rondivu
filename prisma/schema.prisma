@@ -41,6 +41,14 @@ model Event {
   @@index([publicId])
 }
 
+model AppSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+
+  @@index([key])
+}
+
 model Guest {
   id                String     @id @default(cuid())
   eventId           String
