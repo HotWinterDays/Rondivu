@@ -1,56 +1,66 @@
 # Rondivu
 
-Self-hosted, minimalist invite and RSVP kit for creating events, managing guest lists, and tracking responses.
+Self-hosted, minimalist invite and RSVP kit for creating events, managing guest lists, and tracking online responses.
 
 **This app was built with AI assistance** (Cursor/Claude). Code structure, implementation, and security measures were developed iteratively with an AI coding assistant.
-
-## Screenshots
-
-| Home | Create event |
-|------|--------------|
-| ![Home page](./docs/home.png) | ![Create event](./docs/create-event.png) |
-
-| Users | Settings |
-|-------|----------|
-| ![User management](./docs/users.png) | ![Email settings](./docs/settings.png) |
-
-| Public event page | RSVP form |
-|-------------------|------------|
-| ![Public event page](./docs/event-public.png) | ![RSVP form](./docs/rsvp.png) |
 
 ## Tech stack
 
 - **Next.js 16** (App Router), **React 19**, **TypeScript**
 - **Prisma** + **SQLite** (PostgreSQL supported via config change)
 - **TailwindCSS**, **Zod** (validation), **jose** (JWT), **bcryptjs**
+- **next-themes** (dark/light mode)
 - **Email**: Nodemailer (SMTP) or Resend
 
 ## Features
 
-### Events & guests
+### Events
 
-- Create events with title, description, location, dates, host info
-- Named guest lists with plus-ones, notes (per guest)
-- Per-guest RSVP links (private; not exposed on the public event page)
-- Public event page (`/e/[id]`) — event info only, no guest list
-- RSVP page (`/e/[id]/g/[token]`) — Going / Maybe / Not going, plus-ones, note to host
-- Admin dashboard (`/event/[id]/manage?key=...`) — counts, copy link, send invite by email
+- **Create events** — title, subtitle (short tagline), rich-text description, location, dates, host info
+- **Banner image** — optional image at top of event page and invite emails; auto-resized to 1MB if larger (JPG/PNG/WebP/GIF)
+- **Theme color** — customizable accent color for event page borders and email buttons
+- **Edit events** — update title, subtitle, description, and notification preferences from the manage dashboard
+- **Delete events** — remove events (with confirmation) from the manage dashboard
+
+### Guests & RSVP
+
+- **Named guest lists** — per-guest plus-ones (granted by creator), internal notes
+- **Plus-ones** — creators grant a number (0–10) per guest; guests who are granted plus-ones can add name and email for each person they are bringing
+- **Per-guest RSVP links** — private links, not exposed on the public event page
+- **RSVP page** — Going / Maybe / Not going, plus-one details (when granted), note to host
+- **Public event page** — event info (title, subtitle, description, date, location, host) and banner; no guest list
+
+### Admin dashboard
+
+- **Manage events** — view counts (invited, accepted, maybe, declined, attendees), filter by status, copy RSVP links, send invites
+- **Send invites** — individual or bulk email invites with event details, banner, and RSVP link
+- **Edit event details** — collapsible section for title, subtitle, description, notification prefs
 - **Your events** — logged-in creators see their events on the home page with Manage and View links
+
+### Host notifications
+
+- **RSVP changes** — email host when a guest updates their RSVP
+- **New guest** — email host when a guest is added via the manage dashboard
+- Configurable per event (on by default for RSVP changes, off for new guests)
+
+### Theming
+
+- **Dark/light mode** — theme toggle in header; persists via `next-themes`; respects system preference
 
 ### Users & auth
 
 - **First-run setup** (`/admin/setup`) — create first admin (email + password)
 - **Migration** (`/admin/migrate`) — for existing installs with legacy password-only auth
-- **User management** (`/users`) — invite users, assign permissions
-- **Permissions**: Create Event, Modify Settings (admins have all)
+- **User management** (`/users`) — invite users, assign Create Event and Modify Settings permissions
+- **Permissions** — admins have all; regular users get permissions via invites
 - **Invite flow** — email invite with token; invitee sets password at `/accept-invite/[token]`
 
 ### Email
 
 - SMTP, Resend, or copy-link-only (no email)
-- Settings UI — configure provider, App URL, from address, SMTP/Resend in the browser
-- Test email from Settings to verify config
-- Env vars override DB-stored values if both are set
+- **Settings UI** — configure provider, App URL, from address, SMTP/Resend in the browser
+- **Test email** — verify config from Settings
+- Env vars override DB-stored values when set
 
 ### Security
 
@@ -62,7 +72,7 @@ Self-hosted, minimalist invite and RSVP kit for creating events, managing guest 
 
 | Route | Description |
 |-------|-------------|
-| `/` | Home |
+| `/` | Home; Your events (when logged in) |
 | `/create-event` | Create event (requires permission) |
 | `/create-event/success` | Event created — guest & admin links |
 | `/e/[publicId]` | Public event page (guests) |
