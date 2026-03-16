@@ -6,7 +6,8 @@ export async function rsvpAction(formData: FormData) {
   const token = String(formData.get("token") ?? "");
   const status = String(formData.get("status") ?? "PENDING");
   const plusOnesConfirmed = Number(formData.get("plusOnesConfirmed") ?? 0);
-  const guestMessage = String(formData.get("guestMessage") ?? "").trim();
+  const guestMessageRaw = String(formData.get("guestMessage") ?? "").trim();
+  const guestMessage = guestMessageRaw.length > 2000 ? guestMessageRaw.slice(0, 2000) : guestMessageRaw;
 
   const guest = await prisma.guest.findUnique({
     where: { token },
@@ -29,7 +30,7 @@ export async function rsvpAction(formData: FormData) {
     data: {
       status: safeStatus,
       plusOnesConfirmed: safeStatus === "DECLINED" ? 0 : safePlusOnes,
-      guestMessage: guestMessage ? guestMessage : null,
+      guestMessage: guestMessage.length > 0 ? guestMessage : null,
       respondedAt: safeStatus === "PENDING" ? null : new Date(),
     },
   });

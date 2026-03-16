@@ -10,13 +10,14 @@ import {
   sessionFromUser,
   setAdminSessionCookie,
 } from "@/lib/auth";
+import { sanitizeReturnTo } from "@/lib/safe-redirect";
 import { setSetting } from "@/lib/settings";
 
 export async function setupAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "").trim();
   const confirm = String(formData.get("confirm") ?? "").trim();
-  const returnTo = String(formData.get("returnTo") ?? "/settings").trim() || "/settings";
+  const returnTo = sanitizeReturnTo(formData.get("returnTo"), "/settings");
 
   if (await hasAnyUser()) {
     redirect("/admin/login");

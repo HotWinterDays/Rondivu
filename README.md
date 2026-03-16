@@ -2,6 +2,8 @@
 
 Self-hosted, minimalist invite and RSVP kit for creating events, managing guest lists, and tracking responses.
 
+**This app was built with AI assistance** (Cursor/Claude). Code structure, implementation, and security measures were developed iteratively with an AI coding assistant.
+
 ## Features
 
 - Create events with named guest lists (plus-ones, notes)

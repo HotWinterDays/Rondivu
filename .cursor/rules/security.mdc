@@ -1,0 +1,28 @@
+---
+description: Security guidelines for Rondivu — validate inputs, avoid vulnerabilities, follow SECURITY.md
+alwaysApply: true
+---
+
+# Security Guidelines
+
+When editing Rondivu, maintain security posture:
+
+## Input Validation
+- **Redirects**: Always validate `returnTo` and similar params with `sanitizeReturnTo()` — only allow relative paths (`/...`), reject `//evil.com`
+- **Enum/whitelist**: Don't trust form values for provider, status, etc.; validate against a fixed set
+- **Length limits**: Cap user-provided strings (guestMessage, descriptions, etc.) server-side
+- **Email**: Validate format and normalize (trim, lowercase)
+
+## Auth & Session
+- Protect server actions with `requireSession()` or `requirePermission()`
+- Never trust client-supplied userId/role; derive from session
+
+## Output
+- Avoid `dangerouslySetInnerHTML`; React escapes by default
+- Don't log passwords, tokens, or full session payloads
+
+## Sensitive Data
+- Admin keys, guest tokens, invite tokens are secrets — don't expose in URLs unnecessarily or log
+- DB stores password hashes and email config; treat backups as sensitive
+
+See `SECURITY.md` for full audit and deployment notes.

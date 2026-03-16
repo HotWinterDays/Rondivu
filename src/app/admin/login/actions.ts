@@ -12,11 +12,12 @@ import {
   setAdminSessionCookie,
   verifyAdminPassword,
 } from "@/lib/auth";
+import { sanitizeReturnTo } from "@/lib/safe-redirect";
 
 export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "").trim();
-  const returnTo = String(formData.get("returnTo") ?? "/").trim() || "/";
+  const returnTo = sanitizeReturnTo(formData.get("returnTo"));
 
   if (!(await hasAnyUser()) && !(await isAdminPasswordConfigured())) {
     redirect("/admin/setup");

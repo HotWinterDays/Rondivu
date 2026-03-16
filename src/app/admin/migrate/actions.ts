@@ -10,6 +10,7 @@ import {
   setAdminSessionCookie,
   verifyAdminPassword,
 } from "@/lib/auth";
+import { sanitizeReturnTo } from "@/lib/safe-redirect";
 import { getSetting, setSetting } from "@/lib/settings";
 
 const HASH_KEY = "admin_password_hash";
@@ -17,7 +18,7 @@ const HASH_KEY = "admin_password_hash";
 export async function migrateAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "").trim();
-  const returnTo = String(formData.get("returnTo") ?? "/settings").trim() || "/settings";
+  const returnTo = sanitizeReturnTo(formData.get("returnTo"), "/settings");
 
   if (!(await needsMigration())) {
     redirect("/admin/login");

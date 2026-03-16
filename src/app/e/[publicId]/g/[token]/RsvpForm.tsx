@@ -101,10 +101,11 @@ export function RsvpForm({ publicId, token }: Props) {
             <textarea
               name="guestMessage"
               value={guestMessage}
-              onChange={(e) => setGuestMessage(e.target.value)}
+              onChange={(e) => setGuestMessage(e.target.value.slice(0, 2000))}
               className={inputClassName}
               rows={4}
-              placeholder="Any note for the host"
+              maxLength={2000}
+              placeholder="Any note for the host (max 2000 characters)"
             />
           </div>
 
