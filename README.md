@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VyteKit
 
-## Getting Started
+Self-hosted, minimalist invite and RSVP kit for creating events, managing guest lists, and tracking responses.
 
-First, run the development server:
+## Features
+
+- Create events with named guest lists (plus-ones, notes)
+- Per-guest RSVP links (private; not exposed on the public event page)
+- Admin dashboard with counts and copy/send invite
+- Pluggable email: SMTP, Resend, or copy-link-only (no email)
+
+## Local development
 
 ```bash
+npm install
+npx prisma generate
+npx prisma migrate dev
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Docker
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+docker compose up --build
+```
 
-## Learn More
+Data persists in the `vytekit_data` volume.
 
-To learn more about Next.js, take a look at the following resources:
+## Configuration
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | SQLite: `file:./dev.db` or `file:/data/dev.db` (Docker) |
+| `APP_URL` | Base URL for invite links (e.g. `https://yourdomain.com`) |
+| `EMAIL_PROVIDER` | `none`, `smtp`, or `resend` |
+| `EMAIL_FROM` | Sender address (e.g. `VyteKit <noreply@yourdomain.com>`) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### SMTP (`EMAIL_PROVIDER=smtp`)
 
-## Deploy on Vercel
+- `SMTP_HOST` - Server hostname
+- `SMTP_PORT` - Usually 587 (TLS) or 465 (SSL)
+- `SMTP_SECURE` - `true` for port 465
+- `SMTP_USER` / `SMTP_PASS` - Optional auth
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Resend (`EMAIL_PROVIDER=resend`)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `RESEND_API_KEY` - From [resend.com](https://resend.com)
+
+Copy `.env.example` to `.env` and set values as needed.
