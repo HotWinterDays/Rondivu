@@ -42,6 +42,7 @@ export default async function ManageEventPage({
       adminKey: true,
       notifyOnRsvpChange: true,
       notifyOnNewGuest: true,
+      showAttendeesToGuests: true,
       guests: {
         select: {
           id: true,
@@ -144,6 +145,7 @@ export default async function ManageEventPage({
             initialDescription={event.description}
             initialNotifyOnRsvpChange={event.notifyOnRsvpChange}
             initialNotifyOnNewGuest={event.notifyOnNewGuest}
+            initialShowAttendeesToGuests={event.showAttendeesToGuests}
           />
         </details>
 

@@ -12,6 +12,7 @@ type Props = {
   initialDescription: string | null;
   initialNotifyOnRsvpChange: boolean;
   initialNotifyOnNewGuest: boolean;
+  initialShowAttendeesToGuests: boolean;
 };
 
 export function EditEventForm({
@@ -22,6 +23,7 @@ export function EditEventForm({
   initialDescription,
   initialNotifyOnRsvpChange,
   initialNotifyOnNewGuest,
+  initialShowAttendeesToGuests,
 }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +32,7 @@ export function EditEventForm({
   const [descriptionHtml, setDescriptionHtml] = useState(initialDescription ?? "");
   const [notifyOnRsvpChange, setNotifyOnRsvpChange] = useState(initialNotifyOnRsvpChange);
   const [notifyOnNewGuest, setNotifyOnNewGuest] = useState(initialNotifyOnNewGuest);
+  const [showAttendeesToGuests, setShowAttendeesToGuests] = useState(initialShowAttendeesToGuests);
 
   return (
     <form
@@ -43,6 +46,7 @@ export function EditEventForm({
         formData.set("description", descriptionHtml);
         formData.set("notifyOnRsvpChange", notifyOnRsvpChange ? "on" : "");
         formData.set("notifyOnNewGuest", notifyOnNewGuest ? "on" : "");
+        formData.set("showAttendeesToGuests", showAttendeesToGuests ? "on" : "");
         startTransition(async () => {
           const res = await updateEventAction(formData);
           if (!res.ok) setError(res.error ?? "Could not update event.");
@@ -95,6 +99,15 @@ export function EditEventForm({
               className="rounded border-zinc-300"
             />
             Email me when I add a new guest
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={showAttendeesToGuests}
+              onChange={(e) => setShowAttendeesToGuests(e.target.checked)}
+              className="rounded border-zinc-300"
+            />
+            Let guests see who else has RSVPed
           </label>
         </div>
       </div>

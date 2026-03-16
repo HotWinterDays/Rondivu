@@ -149,6 +149,10 @@ export default function CreateEventForm() {
                   <input type="checkbox" name="notifyOnNewGuest" className="rounded border-zinc-300" />
                   Email me when I add a new guest
                 </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="showAttendeesToGuests" className="rounded border-zinc-300" />
+                  Let guests see who else has RSVPed
+                </label>
               </div>
             </div>
           </section>

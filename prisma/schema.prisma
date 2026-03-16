@@ -38,8 +38,9 @@ model Event {
   bannerImageUrl String?
   themeColor     String?
 
-  notifyOnRsvpChange Boolean @default(true)
-  notifyOnNewGuest   Boolean @default(false)
+  notifyOnRsvpChange   Boolean @default(true)
+  notifyOnNewGuest     Boolean @default(false)
+  showAttendeesToGuests Boolean @default(false)
 
   createdById String?
   createdBy   User?    @relation("CreatedEvents", fields: [createdById], references: [id], onDelete: SetNull)

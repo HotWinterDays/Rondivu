@@ -34,6 +34,7 @@ export async function createEventAction(formData: FormData) {
     themeColor: formData.get("themeColor") ?? "",
     notifyOnRsvpChange: formData.get("notifyOnRsvpChange") ?? "",
     notifyOnNewGuest: formData.get("notifyOnNewGuest") ?? "",
+    showAttendeesToGuests: formData.get("showAttendeesToGuests") ?? "",
   });
 
   if (!parsed.success) {
@@ -57,6 +58,7 @@ export async function createEventAction(formData: FormData) {
     themeColor,
     notifyOnRsvpChange,
     notifyOnNewGuest,
+    showAttendeesToGuests,
   } = parsed.data;
   const publicId = newPublicId();
   const adminKey = newAdminKey();
@@ -78,6 +80,7 @@ export async function createEventAction(formData: FormData) {
       themeColor: themeColor ?? undefined,
       notifyOnRsvpChange: notifyOnRsvpChange ?? true,
       notifyOnNewGuest: notifyOnNewGuest ?? false,
+      showAttendeesToGuests: showAttendeesToGuests ?? false,
       guests: {
         create: guests.map((g) => ({
           name: g.name,

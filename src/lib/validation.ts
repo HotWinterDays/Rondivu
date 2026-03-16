@@ -59,6 +59,10 @@ export const createEventSchema = z.object({
     .string()
     .optional()
     .transform((v) => v === "on" || v === "true"),
+  showAttendeesToGuests: z
+    .string()
+    .optional()
+    .transform((v) => v === "on" || v === "true"),
 });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;
@@ -82,6 +86,10 @@ export const updateEventSchema = z.object({
     .optional()
     .transform((v) => v === "on"),
   notifyOnNewGuest: z
+    .string()
+    .optional()
+    .transform((v) => v === "on"),
+  showAttendeesToGuests: z
     .string()
     .optional()
     .transform((v) => v === "on"),

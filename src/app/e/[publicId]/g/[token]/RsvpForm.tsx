@@ -7,22 +7,40 @@ import { rsvpAction } from "./actions";
 
 type PlusOneDetail = { name?: string; email?: string };
 
+type Attendee = { id: string; name: string; plusOnesConfirmed: number };
+
 type Props = {
   publicId: string;
   token: string;
+  title: string;
+  subtitle?: string | null;
+  description?: string | null;
+  dateTimeStr: string;
+  location?: string | null;
+  hostName: string;
   bannerImageUrl?: string | null;
   themeColor?: string | null;
   plusOnesAllowed: number;
   initialPlusOneDetails?: PlusOneDetail[];
+  showAttendeesToGuests?: boolean;
+  attendees?: Attendee[];
 };
 
 export function RsvpForm({
   publicId,
   token,
+  title,
+  subtitle,
+  description,
+  dateTimeStr,
+  location,
+  hostName,
   bannerImageUrl,
   themeColor,
   plusOnesAllowed,
   initialPlusOneDetails = [],
+  showAttendeesToGuests = false,
+  attendees = [],
 }: Props) {
   const accentColor = themeColor || "#3b82f6";
   const [pending, startTransition] = useTransition();
@@ -51,10 +69,52 @@ export function RsvpForm({
             <img src={bannerImageUrl} alt="" className="h-full w-full object-cover" />
           </div>
         ) : null}
-        <h1 className="text-2xl font-semibold tracking-tight">RSVP</h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          Submit your response. (For now this page doesn&apos;t show the full event details.)
-        </p>
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          {subtitle ? (
+            <p className="mt-1 text-base text-zinc-600 dark:text-zinc-400">{subtitle}</p>
+          ) : null}
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Hosted by {hostName} · {dateTimeStr}
+            {location ? ` · ${location}` : ""}
+          </p>
+          {description && description.startsWith("<") ? (
+            <div
+              className="mt-3 text-sm leading-6 text-zinc-800 dark:text-zinc-200 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_h2]:mt-4 [&_h2]:font-semibold"
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
+          ) : description ? (
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-zinc-800 dark:text-zinc-200">
+              {description}
+            </p>
+          ) : null}
+        </div>
+
+        {showAttendeesToGuests && attendees.length > 0 ? (
+          <div
+            className="mb-6 rounded-2xl border-2 bg-zinc-50 p-5 dark:bg-white/5"
+            style={{ borderColor: accentColor }}
+          >
+            <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Who&apos;s coming</h3>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              {attendees.length} {attendees.length === 1 ? "person has" : "people have"} RSVPed
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {attendees.map((g) => (
+                <li
+                  key={g.id}
+                  className="rounded-full bg-white/80 px-3 py-1 text-sm text-zinc-800 dark:bg-white/10 dark:text-zinc-200"
+                >
+                  {g.name}
+                  {g.plusOnesConfirmed > 0 ? ` +${g.plusOnesConfirmed}` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        <h2 className="text-lg font-semibold tracking-tight">RSVP</h2>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Submit your response below.</p>
 
         {error ? (
           <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900/30 dark:bg-red-950/30 dark:text-red-100">

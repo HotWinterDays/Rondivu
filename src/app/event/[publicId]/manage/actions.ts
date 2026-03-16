@@ -213,6 +213,7 @@ export async function updateEventAction(formData: FormData) {
     description: formData.get("description"),
     notifyOnRsvpChange: formData.get("notifyOnRsvpChange"),
     notifyOnNewGuest: formData.get("notifyOnNewGuest"),
+    showAttendeesToGuests: formData.get("showAttendeesToGuests"),
   });
 
   if (!parsed.success) {
@@ -220,7 +221,7 @@ export async function updateEventAction(formData: FormData) {
     return { ok: false as const, error: (first?.message as string) ?? "Invalid data" };
   }
 
-  const { title, subtitle, description, notifyOnRsvpChange, notifyOnNewGuest } = parsed.data;
+  const { title, subtitle, description, notifyOnRsvpChange, notifyOnNewGuest, showAttendeesToGuests } = parsed.data;
   await prisma.event.update({
     where: { id: event.id },
     data: {
@@ -229,6 +230,7 @@ export async function updateEventAction(formData: FormData) {
       description: description ?? null,
       notifyOnRsvpChange,
       notifyOnNewGuest,
+      showAttendeesToGuests: showAttendeesToGuests ?? false,
     },
   });
 

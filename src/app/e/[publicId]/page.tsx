@@ -20,6 +20,12 @@ export default async function GuestEventPage({ params }: { params: Promise<{ pub
       hostName: true,
       bannerImageUrl: true,
       themeColor: true,
+      showAttendeesToGuests: true,
+      guests: {
+        where: { status: { in: ["ACCEPTED", "MAYBE"] } },
+        select: { id: true, name: true, status: true, plusOnesConfirmed: true },
+        orderBy: { name: "asc" },
+      },
     },
   });
 
@@ -73,6 +79,29 @@ export default async function GuestEventPage({ params }: { params: Promise<{ pub
             Use the personal RSVP link your host sent you to respond. Each guest has a unique link.
           </p>
         </div>
+
+        {event.showAttendeesToGuests && event.guests.length > 0 ? (
+          <div
+            className="mt-6 rounded-2xl border-2 bg-zinc-50 p-6 dark:bg-white/5"
+            style={{ borderColor: accentColor }}
+          >
+            <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Who&apos;s coming</h3>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              {event.guests.length} {event.guests.length === 1 ? "person has" : "people have"} RSVPed
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {event.guests.map((g) => (
+                <li
+                  key={g.id}
+                  className="rounded-full bg-white/80 px-3 py-1 text-sm text-zinc-800 dark:bg-white/10 dark:text-zinc-200"
+                >
+                  {g.name}
+                  {g.plusOnesConfirmed > 0 ? ` +${g.plusOnesConfirmed}` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         </div>
       </div>
     </div>
