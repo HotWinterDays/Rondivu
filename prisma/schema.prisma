@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum RsvpStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  MAYBE
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  publicId    String   @unique
+  adminKey    String
+
+  title       String
+  description String?
+  location    String?
+  startTime   DateTime
+  endTime     DateTime?
+
+  hostName    String
+  hostEmail   String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  guests      Guest[]
+
+  @@index([publicId])
+}
+
+model Guest {
+  id                String     @id @default(cuid())
+  eventId           String
+  event             Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  name              String
+  email             String?
+
+  plusOnesAllowed   Int        @default(0)
+  plusOnesConfirmed Int        @default(0)
+
+  status            RsvpStatus @default(PENDING)
+  respondedAt       DateTime?
+  guestMessage      String?
+
+  note              String?
+
+  token             String     @unique
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@index([eventId])
+  @@index([token])
+}
