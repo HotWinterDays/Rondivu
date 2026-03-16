@@ -2,17 +2,17 @@
 
 import { redirect } from "next/navigation";
 
-import { createAdminSession, isAdminPasswordConfigured, setAdminSessionCookie } from "@/lib/auth";
+import { createAdminSession, isAdminPasswordConfigured, setAdminSessionCookie, verifyAdminPassword } from "@/lib/auth";
 
 export async function loginAction(formData: FormData) {
   const password = String(formData.get("password") ?? "").trim();
   const returnTo = String(formData.get("returnTo") ?? "/").trim() || "/";
 
-  if (!isAdminPasswordConfigured()) {
-    redirect("/admin/login?error=not_configured");
+  if (!(await isAdminPasswordConfigured())) {
+    redirect("/admin/setup");
   }
 
-  if (password !== process.env.ADMIN_PASSWORD) {
+  if (!(await verifyAdminPassword(password))) {
     redirect(`/admin/login?error=invalid&returnTo=${encodeURIComponent(returnTo)}`);
   }
 

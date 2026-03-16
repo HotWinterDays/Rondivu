@@ -24,7 +24,20 @@ type Props = {
 const inputClass =
   "w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-950 shadow-sm outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-white/20 dark:focus:ring-white/10";
 
+const defaultConfig: Config = {
+  provider: "none",
+  emailFrom: "",
+  appUrl: "http://localhost:3000",
+  smtpHost: "",
+  smtpPort: "587",
+  smtpSecure: "false",
+  smtpUser: "",
+  smtpPass: "",
+  resendApiKey: "",
+};
+
 export function EmailConfigForm({ initialConfig, className = "" }: Props) {
+  const config = { ...defaultConfig, ...initialConfig };
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
 
@@ -47,7 +60,7 @@ export function EmailConfigForm({ initialConfig, className = "" }: Props) {
           </label>
           <select
             name="provider"
-            defaultValue={initialConfig.provider}
+            defaultValue={config.provider}
             className={inputClass}
           >
             <option value="none">None (copy links only)</option>
@@ -63,7 +76,7 @@ export function EmailConfigForm({ initialConfig, className = "" }: Props) {
           <input
             name="appUrl"
             type="url"
-            defaultValue={initialConfig.appUrl}
+            defaultValue={config.appUrl}
             placeholder="https://yourdomain.com"
             className={inputClass}
           />
@@ -79,7 +92,7 @@ export function EmailConfigForm({ initialConfig, className = "" }: Props) {
           <input
             name="emailFrom"
             type="text"
-            defaultValue={initialConfig.emailFrom}
+            defaultValue={config.emailFrom}
             placeholder="VyteKit &lt;noreply@yourdomain.com&gt;"
             className={inputClass}
           />
@@ -93,26 +106,26 @@ export function EmailConfigForm({ initialConfig, className = "" }: Props) {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Host</label>
-              <input name="smtpHost" defaultValue={initialConfig.smtpHost} className={inputClass} placeholder="smtp.example.com" />
+              <input name="smtpHost" defaultValue={config.smtpHost} className={inputClass} placeholder="smtp.example.com" />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Port</label>
-              <input name="smtpPort" defaultValue={initialConfig.smtpPort} className={inputClass} placeholder="587" />
+              <input name="smtpPort" defaultValue={config.smtpPort} className={inputClass} placeholder="587" />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Secure (SSL)</label>
-              <select name="smtpSecure" defaultValue={initialConfig.smtpSecure} className={inputClass}>
+              <select name="smtpSecure" defaultValue={config.smtpSecure} className={inputClass}>
                 <option value="false">No</option>
                 <option value="true">Yes</option>
               </select>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400">User (optional)</label>
-              <input name="smtpUser" defaultValue={initialConfig.smtpUser} className={inputClass} type="text" />
+              <input name="smtpUser" defaultValue={config.smtpUser} className={inputClass} type="text" />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Password (optional)</label>
-              <input name="smtpPass" defaultValue={initialConfig.smtpPass} className={inputClass} type="password" placeholder="••••••••" autoComplete="new-password" />
+              <input name="smtpPass" defaultValue={config.smtpPass} className={inputClass} type="password" placeholder="••••••••" autoComplete="new-password" />
             </div>
           </div>
         </div>
@@ -121,7 +134,7 @@ export function EmailConfigForm({ initialConfig, className = "" }: Props) {
           <h3 className="text-sm font-medium">Resend (when provider is Resend)</h3>
           <div className="mt-4">
             <label className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400">API key</label>
-            <input name="resendApiKey" defaultValue={initialConfig.resendApiKey} className={inputClass} type="password" placeholder="re_..." autoComplete="new-password" />
+            <input name="resendApiKey" defaultValue={config.resendApiKey} className={inputClass} type="password" placeholder="re_..." autoComplete="new-password" />
           </div>
         </div>
 

@@ -17,11 +17,14 @@ export default async function ManageEventPage({
   const { publicId } = await params;
   const { key, status } = await searchParams;
 
-  if (isAdminPasswordConfigured()) {
+  const passwordConfigured = await isAdminPasswordConfigured();
+  if (passwordConfigured) {
     const valid = await verifyAdminSession();
     if (!valid) {
       redirect(`/admin/login?returnTo=${encodeURIComponent(`/event/${publicId}/manage?key=${key ?? ""}&status=${status ?? "ALL"}`)}`);
     }
+  } else {
+    redirect(`/admin/setup?returnTo=${encodeURIComponent(`/event/${publicId}/manage?key=${key ?? ""}&status=${status ?? "ALL"}`)}`);
   }
 
   const event = await prisma.event.findUnique({

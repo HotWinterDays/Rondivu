@@ -5,12 +5,15 @@ import { isAdminPasswordConfigured, verifyAdminSession } from "@/lib/auth";
 import { getEmailConfig } from "@/lib/settings";
 import { logoutAction } from "@/app/admin/logout/actions";
 
+export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
-  if (isAdminPasswordConfigured()) {
-    const valid = await verifyAdminSession();
-    if (!valid) {
-      redirect("/admin/login?returnTo=/settings");
-    }
+  const passwordConfigured = await isAdminPasswordConfigured();
+  if (!passwordConfigured) {
+    redirect("/admin/setup?returnTo=/settings");
+  }
+  const valid = await verifyAdminSession();
+  if (!valid) {
+    redirect("/admin/login?returnTo=/settings");
   }
 
   const config = await getEmailConfig();
