@@ -7,6 +7,8 @@ export type InviteParams = {
   hostName: string;
   startTime: Date;
   rsvpUrl: string;
+  bannerImageUrl?: string | null; // full URL
+  themeColor?: string | null;    // hex e.g. #3b82f6
 };
 
 export type SendResult = { ok: true } | { ok: false; error: string };
@@ -34,10 +36,14 @@ export function buildRsvpUrl(publicId: string, guestToken: string): string {
   return `${base.replace(/\/$/, "")}/e/${encodeURIComponent(publicId)}/g/${encodeURIComponent(guestToken)}`;
 }
 
-export async function buildRsvpUrlFromConfig(publicId: string, guestToken: string): Promise<string> {
+export async function getAppBaseUrl(): Promise<string> {
   const cfg = await getConfig();
-  const base = process.env.APP_URL ?? cfg.appUrl ?? "http://localhost:3000";
-  return `${base.replace(/\/$/, "")}/e/${encodeURIComponent(publicId)}/g/${encodeURIComponent(guestToken)}`;
+  return (process.env.APP_URL ?? cfg.appUrl ?? "http://localhost:3000").replace(/\/$/, "");
+}
+
+export async function buildRsvpUrlFromConfig(publicId: string, guestToken: string): Promise<string> {
+  const base = await getAppBaseUrl();
+  return `${base}/e/${encodeURIComponent(publicId)}/g/${encodeURIComponent(guestToken)}`;
 }
 
 export async function isEmailConfigured(): Promise<boolean> {
@@ -98,17 +104,22 @@ export async function sendInvite(params: InviteParams): Promise<SendResult> {
     hour: "numeric",
     minute: "2-digit",
   });
+  const accentColor = params.themeColor || "#18181b";
+  const bannerHtml = params.bannerImageUrl
+    ? `<div style="margin: -20px -20px 20px -20px; overflow: hidden; border-radius: 0;"><img src="${escapeHtml(params.bannerImageUrl)}" alt="" width="500" style="display: block; width: 100%; max-width: 500px; height: auto;" /></div>`
+    : "";
   const html = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #333; max-width: 500px; margin: 0 auto; padding: 20px;">
+  ${bannerHtml}
   <p>Hi ${escapeHtml(params.guestName)},</p>
   <p>${escapeHtml(params.hostName)} has invited you to:</p>
-  <h2 style="margin: 16px 0;">${escapeHtml(params.eventTitle)}</h2>
+  <h2 style="margin: 16px 0; border-left: 4px solid ${accentColor}; padding-left: 12px;">${escapeHtml(params.eventTitle)}</h2>
   <p><strong>When:</strong> ${escapeHtml(startStr)}</p>
   <p>Use the link below to RSVP:</p>
-  <p><a href="${escapeHtml(params.rsvpUrl)}" style="display: inline-block; background: #18181b; color: white; padding: 10px 20px; border-radius: 9999px; text-decoration: none; margin-top: 8px;">RSVP</a></p>
+  <p><a href="${escapeHtml(params.rsvpUrl)}" style="display: inline-block; background: ${accentColor}; color: white; padding: 10px 20px; border-radius: 9999px; text-decoration: none; margin-top: 8px;">RSVP</a></p>
   <p style="margin-top: 24px; font-size: 14px; color: #666;">This invite was sent by Rondivu.</p>
 </body>
 </html>`;

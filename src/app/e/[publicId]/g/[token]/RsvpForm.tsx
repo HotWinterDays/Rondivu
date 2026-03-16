@@ -8,9 +8,12 @@ import { rsvpAction } from "./actions";
 type Props = {
   publicId: string;
   token: string;
+  bannerImageUrl?: string | null;
+  themeColor?: string | null;
 };
 
-export function RsvpForm({ publicId, token }: Props) {
+export function RsvpForm({ publicId, token, bannerImageUrl, themeColor }: Props) {
+  const accentColor = themeColor || "#3b82f6";
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<"ACCEPTED" | "DECLINED" | "MAYBE">("ACCEPTED");
   const [plusOnesConfirmed, setPlusOnesConfirmed] = useState(0);
@@ -22,7 +25,15 @@ export function RsvpForm({ publicId, token }: Props) {
 
   return (
     <div className="mx-auto w-full max-w-xl">
-      <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-white/10 dark:bg-zinc-950">
+      <div
+        className="overflow-hidden rounded-2xl border-2 bg-white p-8 shadow-sm dark:bg-zinc-950"
+        style={{ borderColor: accentColor }}
+      >
+        {bannerImageUrl ? (
+          <div className="-mx-8 -mt-8 mb-6 h-32 overflow-hidden sm:h-40">
+            <img src={bannerImageUrl} alt="" className="h-full w-full object-cover" />
+          </div>
+        ) : null}
         <h1 className="text-2xl font-semibold tracking-tight">RSVP</h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           Submit your response. (For now this page doesn&apos;t show the full event details.)
@@ -119,7 +130,8 @@ export function RsvpForm({ publicId, token }: Props) {
             <button
               type="submit"
               disabled={pending}
-              className="inline-flex h-11 items-center justify-center rounded-full bg-zinc-950 px-6 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              className="inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-medium text-white disabled:opacity-60"
+              style={{ backgroundColor: accentColor }}
             >
               {pending ? "Saving..." : "Save RSVP"}
             </button>

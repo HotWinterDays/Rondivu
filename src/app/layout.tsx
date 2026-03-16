@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Header } from "@/components/Header";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { getSession, verifyAdminSession } from "@/lib/auth";
 import "./globals.css";
 
@@ -31,10 +32,11 @@ export default async function RootLayout({
   const showUsers = canModifySettings;
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-50 text-zinc-950 dark:bg-black dark:text-zinc-50`}
       >
+        <ThemeProvider>
         <div className="min-h-dvh">
           <Header
             canCreateEvent={canCreateEvent}
@@ -43,6 +45,7 @@ export default async function RootLayout({
           />
           <main className="px-6 pb-16">{children}</main>
         </div>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth";
 import { newAdminKey, newGuestToken, newPublicId } from "@/lib/ids";
+import { saveBannerImage } from "@/lib/upload";
 import { createEventSchema } from "@/lib/validation";
 
 export async function createEventAction(formData: FormData) {
@@ -12,6 +13,12 @@ export async function createEventAction(formData: FormData) {
 
   const rawGuests = formData.get("guests");
   const guestsJson = typeof rawGuests === "string" ? rawGuests : "[]";
+
+  let bannerImageUrl: string | null = null;
+  const bannerFile = formData.get("bannerImage") as File | null;
+  if (bannerFile && bannerFile.size > 0) {
+    bannerImageUrl = await saveBannerImage(bannerFile);
+  }
 
   const parsed = createEventSchema.safeParse({
     title: formData.get("title"),
@@ -22,6 +29,8 @@ export async function createEventAction(formData: FormData) {
     hostName: formData.get("hostName"),
     hostEmail: formData.get("hostEmail"),
     guests: JSON.parse(guestsJson),
+    bannerImageUrl: bannerImageUrl ?? "",
+    themeColor: formData.get("themeColor") ?? "",
   });
 
   if (!parsed.success) {
@@ -32,7 +41,7 @@ export async function createEventAction(formData: FormData) {
     };
   }
 
-  const { title, description, location, startTime, endTime, hostName, hostEmail, guests } = parsed.data;
+  const { title, description, location, startTime, endTime, hostName, hostEmail, guests, themeColor } = parsed.data;
   const publicId = newPublicId();
   const adminKey = newAdminKey();
 
@@ -48,6 +57,8 @@ export async function createEventAction(formData: FormData) {
       endTime: endTime ? new Date(endTime) : null,
       hostName,
       hostEmail,
+      bannerImageUrl: bannerImageUrl ?? undefined,
+      themeColor: themeColor ?? undefined,
       guests: {
         create: guests.map((g) => ({
           name: g.name,

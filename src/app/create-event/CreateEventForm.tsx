@@ -3,7 +3,10 @@
 import { useMemo, useState, useTransition } from "react";
 
 import { DateTimeField } from "@/components/DateTimeField";
+import { resizeImage } from "@/lib/resizeImage";
 import { createEventAction } from "./actions";
+
+const MAX_BANNER_BYTES = 1024 * 1024; // 1MB
 
 type GuestDraft = {
   name: string;
@@ -17,6 +20,8 @@ const emptyGuest: GuestDraft = { name: "", email: "", plusOnesAllowed: 0, note: 
 export default function CreateEventForm() {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [bannerError, setBannerError] = useState<string | null>(null);
+  const [resizing, setResizing] = useState(false);
 
   const [guests, setGuests] = useState<GuestDraft[]>([{ ...emptyGuest }]);
 
@@ -52,13 +57,69 @@ export default function CreateEventForm() {
           className="mt-8 space-y-10"
           action={(formData) => {
             setError(null);
+            setBannerError(null);
+            const file = formData.get("bannerImage") as File | null;
             startTransition(async () => {
-              const res = await createEventAction(formData);
-              if (res && "ok" in res && !res.ok) setError(res.formError ?? "Could not create event.");
+              try {
+                let dataToSend = formData;
+                if (file && file.size > 0 && file.size > MAX_BANNER_BYTES) {
+                  setResizing(true);
+                  try {
+                    const resized = await resizeImage(file, MAX_BANNER_BYTES);
+                    const resizedFile = new File([resized], file.name.replace(/\.[^.]+$/, ".jpg") || "banner.jpg", {
+                      type: "image/jpeg",
+                    });
+                    dataToSend = new FormData();
+                    for (const [key, value] of formData.entries()) {
+                      if (key === "bannerImage") {
+                        dataToSend.set(key, resizedFile);
+                      } else {
+                        dataToSend.set(key, value);
+                      }
+                    }
+                  } catch (resizeErr) {
+                    setBannerError("Could not resize image. Try a smaller file or a different format.");
+                    setResizing(false);
+                    return;
+                  } finally {
+                    setResizing(false);
+                  }
+                }
+                const res = await createEventAction(dataToSend);
+                if (res && "ok" in res && !res.ok) setError(res.formError ?? "Could not create event.");
+              } catch (err) {
+                setError("Upload failed. Try a smaller image (under 1MB) or create the event without a banner first.");
+              }
             });
           }}
         >
           <section className="space-y-4">
+            <div>
+              <Label>Banner image (optional)</Label>
+              <p className="mt-1 text-xs text-zinc-500">
+                Shows at the top of the event page and invite emails. JPG/PNG/WebP/GIF. Images over 1MB are automatically resized.
+              </p>
+              {bannerError ? (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">{bannerError}</p>
+              ) : null}
+              <input
+                type="file"
+                name="bannerImage"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={() => setBannerError(null)}
+                className="mt-2 block w-full text-sm text-zinc-600 file:mr-4 file:rounded-full file:border-0 file:bg-zinc-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-zinc-950 hover:file:bg-zinc-200 dark:text-zinc-400 dark:file:bg-white/10 dark:file:text-zinc-50 dark:hover:file:bg-white/20"
+              />
+            </div>
+            <div>
+              <Label>Theme color (optional)</Label>
+              <p className="mt-1 text-xs text-zinc-500">Used for borders and accents on the event page and in emails.</p>
+              <input
+                type="color"
+                name="themeColor"
+                defaultValue="#3b82f6"
+                className="mt-2 h-10 w-24 cursor-pointer rounded border border-zinc-200 bg-transparent dark:border-white/10"
+              />
+            </div>
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Title" name="title" placeholder="Birthday dinner" required />
               <Field label="Location" name="location" placeholder="123 Main St (optional)" />
@@ -164,7 +225,7 @@ export default function CreateEventForm() {
               disabled={pending}
               className="inline-flex h-11 items-center justify-center rounded-full bg-zinc-950 px-6 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
             >
-              {pending ? "Creating..." : "Create event"}
+              {pending ? (resizing ? "Resizing image..." : "Creating...") : "Create event"}
             </button>
           </div>
         </form>

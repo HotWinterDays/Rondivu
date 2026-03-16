@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { ThemeToggle } from "@/components/ThemeToggle";
+
 type HeaderProps = {
   canCreateEvent?: boolean;
   canModifySettings?: boolean;
@@ -21,6 +23,7 @@ export function Header({ canCreateEvent, canModifySettings, showUsers }: HeaderP
         <Link href="/" className="font-medium tracking-tight">
           Rondivu
         </Link>
+        <div className="flex items-center gap-3">
         {showNav && (
           <nav className="flex items-center gap-4 text-sm text-zinc-600 dark:text-zinc-400">
             {canCreateEvent && (
@@ -40,6 +43,8 @@ export function Header({ canCreateEvent, canModifySettings, showUsers }: HeaderP
             )}
           </nav>
         )}
+        <ThemeToggle />
+        </div>
       </div>
     </header>
   );

@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getSetting, setSetting } from "@/lib/settings";
-import { buildRsvpUrlFromConfig, isEmailConfigured, sendInvite } from "@/lib/email";
+import { buildRsvpUrlFromConfig, getAppBaseUrl, isEmailConfigured, sendInvite } from "@/lib/email";
 import { guestInputSchema } from "@/lib/validation";
 import { newGuestToken } from "@/lib/ids";
 
@@ -64,7 +64,7 @@ export async function sendInviteAction(formData: FormData) {
 
   const event = await prisma.event.findUnique({
     where: { publicId },
-    select: { id: true, adminKey: true, title: true, hostName: true, startTime: true },
+    select: { id: true, adminKey: true, title: true, hostName: true, startTime: true, bannerImageUrl: true, themeColor: true },
   });
 
   if (!event || event.adminKey !== adminKey) {
@@ -84,7 +84,8 @@ export async function sendInviteAction(formData: FormData) {
     return { ok: false as const, error: "Email is not configured. Set EMAIL_PROVIDER and provider-specific env vars." };
   }
 
-  const rsvpUrl = await buildRsvpUrlFromConfig(publicId, guestToken);
+  const [rsvpUrl, baseUrl] = await Promise.all([buildRsvpUrlFromConfig(publicId, guestToken), getAppBaseUrl()]);
+  const bannerFullUrl = event.bannerImageUrl ? `${baseUrl}${event.bannerImageUrl}` : null;
   const result = await sendInvite({
     guestName: guest.name,
     guestEmail: guest.email,
@@ -92,6 +93,8 @@ export async function sendInviteAction(formData: FormData) {
     hostName: event.hostName,
     startTime: event.startTime,
     rsvpUrl,
+    bannerImageUrl: bannerFullUrl,
+    themeColor: event.themeColor,
   });
 
   if (!result.ok) {
@@ -110,7 +113,7 @@ export async function bulkSendInvitesAction(formData: FormData) {
 
   const event = await prisma.event.findUnique({
     where: { publicId },
-    select: { id: true, adminKey: true, title: true, hostName: true, startTime: true },
+    select: { id: true, adminKey: true, title: true, hostName: true, startTime: true, bannerImageUrl: true, themeColor: true },
   });
 
   if (!event || event.adminKey !== adminKey) {
@@ -141,6 +144,9 @@ export async function bulkSendInvitesAction(formData: FormData) {
     return { ok: false as const, error: "No guests have email addresses." };
   }
 
+  const baseUrl = await getAppBaseUrl();
+  const bannerFullUrl = event.bannerImageUrl ? `${baseUrl}${event.bannerImageUrl}` : null;
+
   let sent = 0;
   let failed = 0;
   for (const g of withEmail) {
@@ -152,6 +158,8 @@ export async function bulkSendInvitesAction(formData: FormData) {
       hostName: event.hostName,
       startTime: event.startTime,
       rsvpUrl,
+      bannerImageUrl: bannerFullUrl,
+      themeColor: event.themeColor,
     });
     if (result.ok) sent++;
     else failed++;

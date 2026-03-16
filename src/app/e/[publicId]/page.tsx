@@ -17,6 +17,8 @@ export default async function GuestEventPage({ params }: { params: Promise<{ pub
       startTime: true,
       endTime: true,
       hostName: true,
+      bannerImageUrl: true,
+      themeColor: true,
     },
   });
 
@@ -24,10 +26,24 @@ export default async function GuestEventPage({ params }: { params: Promise<{ pub
 
   const start = new Date(event.startTime);
   const end = event.endTime ? new Date(event.endTime) : null;
+  const accentColor = event.themeColor || "#3b82f6";
 
   return (
     <div className="mx-auto w-full max-w-3xl">
-      <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-white/10 dark:bg-zinc-950">
+      <div
+        className="overflow-hidden rounded-2xl border-2 bg-white shadow-sm dark:bg-zinc-950"
+        style={{ borderColor: accentColor }}
+      >
+        {event.bannerImageUrl ? (
+          <div className="relative h-48 w-full overflow-hidden sm:h-56">
+            <img
+              src={event.bannerImageUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ) : null}
+        <div className="p-8">
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">{event.title}</h1>
           <div className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -42,10 +58,14 @@ export default async function GuestEventPage({ params }: { params: Promise<{ pub
           ) : null}
         </div>
 
-        <div className="mt-10 rounded-2xl border border-zinc-200 bg-zinc-50 p-6 dark:border-white/10 dark:bg-white/5">
+        <div
+          className="mt-10 rounded-2xl border-2 bg-zinc-50 p-6 dark:bg-white/5"
+          style={{ borderColor: accentColor }}
+        >
           <p className="text-sm text-zinc-700 dark:text-zinc-300">
             Use the personal RSVP link your host sent you to respond. Each guest has a unique link.
           </p>
+        </div>
         </div>
       </div>
     </div>

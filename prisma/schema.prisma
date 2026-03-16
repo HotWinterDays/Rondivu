@@ -33,6 +33,9 @@ model Event {
   hostName    String
   hostEmail   String
 
+  bannerImageUrl String?
+  themeColor     String?
+
   createdById String?
   createdBy   User?    @relation("CreatedEvents", fields: [createdById], references: [id], onDelete: SetNull)
 

@@ -36,6 +36,14 @@ export const createEventSchema = z.object({
   hostName: z.string().trim().min(1, "Host name is required").max(100),
   hostEmail: z.string().trim().email("Invalid host email"),
   guests: z.array(guestInputSchema).min(1, "Add at least one guest"),
+  bannerImageUrl: z.string().trim().optional().or(z.literal("")),
+  themeColor: z
+    .string()
+    .trim()
+    .max(20)
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v && /^#[0-9A-Fa-f]{6}$/.test(v) ? v : undefined)),
 });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;
