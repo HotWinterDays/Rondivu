@@ -4,6 +4,16 @@ Self-hosted, minimalist invite and RSVP kit for creating events, managing guest 
 
 **This app was built with AI assistance** (Cursor/Claude). Code structure, implementation, and security measures were developed iteratively with an AI coding assistant.
 
+## Screenshots
+
+| Home | Create event |
+|------|--------------|
+| ![Home page](./docs/home.png) | ![Create event](./docs/create-event.png) |
+
+| Users | Settings |
+|-------|----------|
+| ![User management](./docs/users.png) | ![Email settings](./docs/settings.png) |
+
 ## Tech stack
 
 - **Next.js 16** (App Router), **React 19**, **TypeScript**
