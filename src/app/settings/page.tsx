@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 
 import { EmailConfigForm } from "@/components/EmailConfigForm";
+import { TestEmailForm } from "@/components/TestEmailForm";
 import { isAdminPasswordConfigured, verifyAdminSession } from "@/lib/auth";
 import { getEmailConfig } from "@/lib/settings";
+import { isEmailConfigured } from "@/lib/email";
 import { logoutAction } from "@/app/admin/logout/actions";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +18,7 @@ export default async function SettingsPage() {
     redirect("/admin/login?returnTo=/settings");
   }
 
-  const config = await getEmailConfig();
+  const [config, emailConfigured] = await Promise.all([getEmailConfig(), isEmailConfigured()]);
 
   return (
     <div className="mx-auto w-full max-w-2xl">
@@ -41,6 +43,10 @@ export default async function SettingsPage() {
         </div>
 
         <EmailConfigForm initialConfig={config} className="mt-10" />
+
+        <div className="mt-10">
+          <TestEmailForm disabled={!emailConfigured} />
+        </div>
       </div>
     </div>
   );

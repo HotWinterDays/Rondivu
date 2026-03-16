@@ -48,6 +48,33 @@ export async function isEmailConfigured(): Promise<boolean> {
   return false;
 }
 
+export async function sendTestEmail(to: string): Promise<SendResult> {
+  const cfg = await getConfig();
+  if (cfg.provider === "none") {
+    return { ok: false, error: "Email is not configured. Choose SMTP or Resend and save." };
+  }
+  const email = to.trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { ok: false, error: "Enter a valid email address." };
+  }
+  const from = cfg.emailFrom;
+  const subject = "Rondivu test email";
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #333; max-width: 500px; margin: 0 auto; padding: 20px;">
+  <p>This is a test email from Rondivu.</p>
+  <p>If you received this, your email configuration is working.</p>
+  <p style="margin-top: 24px; font-size: 14px; color: #666;">Sent by Rondivu</p>
+</body>
+</html>`;
+  const text = "This is a test email from Rondivu. If you received this, your email configuration is working.\n\n— Sent by Rondivu";
+  if (cfg.provider === "smtp") return sendViaSmtp({ to: email, from, subject, html, text, cfg });
+  if (cfg.provider === "resend") return sendViaResend({ to: email, from, subject, html, text, cfg });
+  return { ok: false, error: "Email provider not supported for testing." };
+}
+
 export async function sendInvite(params: InviteParams): Promise<SendResult> {
   const cfg = await getConfig();
 

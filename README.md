@@ -47,6 +47,7 @@ Most configuration is done in the **Settings** page after you’ve set an admin 
 1. Go to Settings (or create an event and use the admin link).
 2. On first run, set an admin password at `/admin/setup`.
 3. Configure **App URL**, **Email provider** (none / SMTP / Resend), **From address**, and provider-specific fields.
+4. Save, then use **Test email** to send a sample message to any address and confirm delivery.
 
 Values are stored in the database. Env vars override these if both are set.
 
