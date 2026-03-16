@@ -6,8 +6,8 @@ services:
     environment:
       DATABASE_URL: "file:/data/dev.db"
     volumes:
-      - vytekit_data:/data
+      - rondivu_data:/data
 
 volumes:
-  vytekit_data:
+  rondivu_data:
 

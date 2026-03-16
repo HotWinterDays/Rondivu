@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VyteKit",
+  title: "Rondivu",
   description: "Self-hosted, minimalist invite and RSVP kit.",
 };
 
@@ -31,7 +31,7 @@ export default function RootLayout({
           <header className="px-6 py-6">
             <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
               <a href="/" className="font-medium tracking-tight">
-                VyteKit
+                Rondivu
               </a>
               <nav className="flex items-center gap-4 text-sm text-zinc-600 dark:text-zinc-400">
                 <a className="hover:text-zinc-950 dark:hover:text-zinc-50" href="/create-event">

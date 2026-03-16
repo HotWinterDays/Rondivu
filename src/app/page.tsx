@@ -8,7 +8,7 @@ export default function Home() {
               Minimal invites. Self-hosted RSVPs.
             </h1>
             <p className="mt-3 text-pretty text-zinc-600 dark:text-zinc-400">
-              VyteKit lets you create events, manage guest lists (plus-ones included), and collect RSVPs
+              Rondivu lets you create events, manage guest lists (plus-ones included), and collect RSVPs
               with a clean, responsive UI—designed for simple Docker deployment.
             </p>
           </div>
@@ -20,7 +20,7 @@ export default function Home() {
               Create an event
             </a>
             <a
-              href="https://github.com/HotWinterDays/vyte-kit"
+              href="https://github.com/HotWinterDays/rondivu"
               target="_blank"
               rel="noreferrer"
               className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-200 px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-50 dark:border-white/10 dark:text-white dark:hover:bg-white/5"

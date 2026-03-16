@@ -93,7 +93,7 @@ export function EmailConfigForm({ initialConfig, className = "" }: Props) {
             name="emailFrom"
             type="text"
             defaultValue={config.emailFrom}
-            placeholder="VyteKit &lt;noreply@yourdomain.com&gt;"
+            placeholder="Rondivu &lt;noreply@yourdomain.com&gt;"
             className={inputClass}
           />
           <p className="mt-1 text-xs text-zinc-500">

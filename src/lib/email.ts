@@ -16,7 +16,7 @@ async function getConfig() {
   const fromEnv = (key: string) => process.env[key] ?? "";
   return {
     provider: db.provider || (fromEnv("EMAIL_PROVIDER") || "none").toLowerCase(),
-    emailFrom: db.emailFrom || fromEnv("EMAIL_FROM") || "VyteKit <noreply@localhost>",
+    emailFrom: db.emailFrom || fromEnv("EMAIL_FROM") || "Rondivu <noreply@localhost>",
     appUrl: fromEnv("APP_URL") || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
     smtpHost: db.smtpHost || fromEnv("SMTP_HOST"),
     smtpPort: db.smtpPort || fromEnv("SMTP_PORT") || "587",
@@ -82,7 +82,7 @@ export async function sendInvite(params: InviteParams): Promise<SendResult> {
   <p><strong>When:</strong> ${escapeHtml(startStr)}</p>
   <p>Use the link below to RSVP:</p>
   <p><a href="${escapeHtml(params.rsvpUrl)}" style="display: inline-block; background: #18181b; color: white; padding: 10px 20px; border-radius: 9999px; text-decoration: none; margin-top: 8px;">RSVP</a></p>
-  <p style="margin-top: 24px; font-size: 14px; color: #666;">This invite was sent by VyteKit.</p>
+  <p style="margin-top: 24px; font-size: 14px; color: #666;">This invite was sent by Rondivu.</p>
 </body>
 </html>`;
 
@@ -95,7 +95,7 @@ When: ${startStr}
 RSVP here: ${params.rsvpUrl}
 
 —
-Sent by VyteKit
+Sent by Rondivu
 `.trim();
 
   if (cfg.provider === "smtp") {

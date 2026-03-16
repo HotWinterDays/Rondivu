@@ -1,4 +1,4 @@
-# VyteKit
+# Rondivu
 
 Self-hosted, minimalist invite and RSVP kit for creating events, managing guest lists, and tracking responses.
 
@@ -28,7 +28,7 @@ Open `http://localhost:3000`. On first visit to Settings or an event dashboard, 
 docker compose up --build
 ```
 
-Data persists in the `vytekit_data` volume.
+Data persists in the `rondivu_data` volume.
 
 ## Configuration
 
@@ -58,7 +58,7 @@ If you prefer env vars (or need them for Docker), you can set:
 |----------|-----------|
 | `APP_URL` | App URL for invite links |
 | `EMAIL_PROVIDER` | `none`, `smtp`, or `resend` |
-| `EMAIL_FROM` | Sender address (e.g. `VyteKit <noreply@yourdomain.com>`) |
+| `EMAIL_FROM` | Sender address (e.g. `Rondivu <noreply@yourdomain.com>`) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | SMTP settings |
 | `RESEND_API_KEY` | Resend API key |
 

@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 import { getSetting, setSetting } from "@/lib/settings";
 
-const COOKIE_NAME = "vytekit_admin";
+const COOKIE_NAME = "rondivu_admin";
 const MAX_AGE = 60 * 60 * 24; // 24 hours
 const HASH_KEY = "admin_password_hash";
 const SESSION_SECRET_KEY = "admin_session_secret";
