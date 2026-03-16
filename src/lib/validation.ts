@@ -19,10 +19,16 @@ export const guestInputSchema = z.object({
 
 export const createEventSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(140),
+  subtitle: z
+    .string()
+    .trim()
+    .max(200)
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
   description: z
     .string()
     .trim()
-    .max(2000)
+    .max(50000)
     .optional()
     .or(z.literal("").transform(() => undefined)),
   location: z
@@ -44,7 +50,42 @@ export const createEventSchema = z.object({
     .optional()
     .or(z.literal(""))
     .transform((v) => (v && /^#[0-9A-Fa-f]{6}$/.test(v) ? v : undefined)),
+  notifyOnRsvpChange: z
+    .string()
+    .optional()
+    .default("on")
+    .transform((v) => v === "on" || v === "true"),
+  notifyOnNewGuest: z
+    .string()
+    .optional()
+    .transform((v) => v === "on" || v === "true"),
 });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;
+
+export const updateEventSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(140),
+  subtitle: z
+    .string()
+    .trim()
+    .max(200)
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  description: z
+    .string()
+    .trim()
+    .max(50000)
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  notifyOnRsvpChange: z
+    .string()
+    .optional()
+    .transform((v) => v === "on"),
+  notifyOnNewGuest: z
+    .string()
+    .optional()
+    .transform((v) => v === "on"),
+});
+
+export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 

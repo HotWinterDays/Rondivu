@@ -5,23 +5,40 @@ import Link from "next/link";
 
 import { rsvpAction } from "./actions";
 
+type PlusOneDetail = { name?: string; email?: string };
+
 type Props = {
   publicId: string;
   token: string;
   bannerImageUrl?: string | null;
   themeColor?: string | null;
+  plusOnesAllowed: number;
+  initialPlusOneDetails?: PlusOneDetail[];
 };
 
-export function RsvpForm({ publicId, token, bannerImageUrl, themeColor }: Props) {
+export function RsvpForm({
+  publicId,
+  token,
+  bannerImageUrl,
+  themeColor,
+  plusOnesAllowed,
+  initialPlusOneDetails = [],
+}: Props) {
   const accentColor = themeColor || "#3b82f6";
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<"ACCEPTED" | "DECLINED" | "MAYBE">("ACCEPTED");
-  const [plusOnesConfirmed, setPlusOnesConfirmed] = useState(0);
+  const [plusOneDetails, setPlusOneDetails] = useState<PlusOneDetail[]>(() =>
+    Array.from({ length: plusOnesAllowed }, (_, i) => initialPlusOneDetails[i] ?? { name: "", email: "" })
+  );
   const [guestMessage, setGuestMessage] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const attendeeCount = useMemo(() => 1 + (status === "DECLINED" ? 0 : plusOnesConfirmed), [plusOnesConfirmed, status]);
+  const confirmedCount = useMemo(
+    () => plusOneDetails.filter((p) => (p.name ?? "").trim() || (p.email ?? "").trim()).length,
+    [plusOneDetails]
+  );
+  const attendeeCount = 1 + (status === "DECLINED" ? 0 : confirmedCount);
 
   return (
     <div className="mx-auto w-full max-w-xl">
@@ -62,6 +79,7 @@ export function RsvpForm({ publicId, token, bannerImageUrl, themeColor }: Props)
           action={(formData) => {
             setError(null);
             setResult(null);
+            formData.set("plusOneDetails", JSON.stringify(plusOneDetails));
             startTransition(async () => {
               const res = await rsvpAction(formData);
               if (!res.ok) {
@@ -88,22 +106,54 @@ export function RsvpForm({ publicId, token, bannerImageUrl, themeColor }: Props)
 
           <input type="hidden" name="status" value={status} />
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-zinc-900 dark:text-zinc-100">Plus-ones</label>
-            <div className="flex items-center gap-3">
-              <input
-                type="number"
-                name="plusOnesConfirmed"
-                value={plusOnesConfirmed}
-                onChange={(e) => setPlusOnesConfirmed(Number(e.target.value))}
-                min={0}
-                max={10}
-                disabled={status === "DECLINED"}
-                className={inputClassName}
-              />
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">Total attendees: {attendeeCount}</div>
+          {plusOnesAllowed > 0 && (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                Plus-ones (you were granted {plusOnesAllowed})
+              </label>
+              <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+                Optionally add name and email for each person you&apos;re bringing.
+              </p>
+              <div className="space-y-3">
+                {plusOneDetails.map((p, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-white/10 dark:bg-white/5"
+                  >
+                    <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Plus-one {i + 1}</div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      <input
+                        type="text"
+                        placeholder="Name (optional)"
+                        value={p.name ?? ""}
+                        onChange={(e) =>
+                          setPlusOneDetails((prev) =>
+                            prev.map((x, j) => (j === i ? { ...x, name: e.target.value } : x))
+                          )
+                        }
+                        disabled={status === "DECLINED"}
+                        maxLength={100}
+                        className={inputClassName}
+                      />
+                      <input
+                        type="email"
+                        placeholder="Email (optional)"
+                        value={p.email ?? ""}
+                        onChange={(e) =>
+                          setPlusOneDetails((prev) =>
+                            prev.map((x, j) => (j === i ? { ...x, email: e.target.value } : x))
+                          )
+                        }
+                        disabled={status === "DECLINED"}
+                        className={inputClassName}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Total attendees: {attendeeCount}</div>
             </div>
-          </div>
+          )}
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-zinc-900 dark:text-zinc-100">

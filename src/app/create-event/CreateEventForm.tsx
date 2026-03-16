@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 
 import { DateTimeField } from "@/components/DateTimeField";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { resizeImage } from "@/lib/resizeImage";
 import { createEventAction } from "./actions";
 
@@ -22,6 +23,7 @@ export default function CreateEventForm() {
   const [error, setError] = useState<string | null>(null);
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [resizing, setResizing] = useState(false);
+  const [descriptionHtml, setDescriptionHtml] = useState("");
 
   const [guests, setGuests] = useState<GuestDraft[]>([{ ...emptyGuest }]);
 
@@ -62,6 +64,7 @@ export default function CreateEventForm() {
             startTransition(async () => {
               try {
                 let dataToSend = formData;
+                dataToSend.set("description", descriptionHtml);
                 if (file && file.size > 0 && file.size > MAX_BANNER_BYTES) {
                   setResizing(true);
                   try {
@@ -69,14 +72,11 @@ export default function CreateEventForm() {
                     const resizedFile = new File([resized], file.name.replace(/\.[^.]+$/, ".jpg") || "banner.jpg", {
                       type: "image/jpeg",
                     });
-                    dataToSend = new FormData();
-                    for (const [key, value] of formData.entries()) {
-                      if (key === "bannerImage") {
-                        dataToSend.set(key, resizedFile);
-                      } else {
-                        dataToSend.set(key, value);
-                      }
+                    const newFormData = new FormData();
+                    for (const [k, v] of dataToSend.entries()) {
+                      newFormData.set(k, k === "bannerImage" ? resizedFile : v);
                     }
+                    dataToSend = newFormData;
                   } catch (resizeErr) {
                     setBannerError("Could not resize image. Try a smaller file or a different format.");
                     setResizing(false);
@@ -122,13 +122,35 @@ export default function CreateEventForm() {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Title" name="title" placeholder="Birthday dinner" required />
+              <Field label="Subtitle" name="subtitle" placeholder="Short tagline (optional)" />
+            </div>
+            <div>
+              <Label>Description (optional)</Label>
+              <p className="mt-1 text-xs text-zinc-500">Full event details with formatting.</p>
+              <div className="mt-2">
+                <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} placeholder="Write details for your guests..." />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
               <Field label="Location" name="location" placeholder="123 Main St (optional)" />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <DateTimeField label="Start time" name="startTime" required />
               <DateTimeField label="End time" name="endTime" defaultTime="20:00" />
             </div>
-            <TextArea label="Description" name="description" placeholder="Details for your guests (optional)" rows={4} />
+            <div>
+              <Label>Notification preferences</Label>
+              <div className="mt-2 space-y-2">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="notifyOnRsvpChange" defaultChecked className="rounded border-zinc-300" />
+                  Email me when a guest changes their RSVP
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="notifyOnNewGuest" className="rounded border-zinc-300" />
+                  Email me when I add a new guest
+                </label>
+              </div>
+            </div>
           </section>
 
           <section className="space-y-4">

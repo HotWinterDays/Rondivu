@@ -12,6 +12,7 @@ export default async function GuestEventPage({ params }: { params: Promise<{ pub
     where: { publicId },
     select: {
       title: true,
+      subtitle: true,
       description: true,
       location: true,
       startTime: true,
@@ -46,15 +47,21 @@ export default async function GuestEventPage({ params }: { params: Promise<{ pub
         <div className="p-8">
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">{event.title}</h1>
-          <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          {(event.subtitle || (event.description && !event.description.startsWith("<"))) ? (
+            <p className="text-base text-zinc-600 dark:text-zinc-400">
+              {event.subtitle ?? event.description}
+            </p>
+          ) : null}
+          <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             Hosted by {event.hostName} · {formatDateTime(start)}
             {end ? ` – ${formatDateTime(end)}` : ""}
             {event.location ? ` · ${event.location}` : ""}
           </div>
-          {event.description ? (
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-zinc-800 dark:text-zinc-200">
-              {event.description}
-            </p>
+          {event.description && event.description.startsWith("<") ? (
+            <div
+              className="mt-3 text-sm leading-6 text-zinc-800 dark:text-zinc-200 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_h2]:mt-4 [&_h2]:font-semibold"
+              dangerouslySetInnerHTML={{ __html: event.description }}
+            />
           ) : null}
         </div>
 

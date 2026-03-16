@@ -9,17 +9,26 @@ export default async function GuestRsvpPage({
   params: Promise<{ publicId: string; token: string }>;
 }) {
   const { publicId, token } = await params;
-  const event = await prisma.event.findUnique({
-    where: { publicId },
-    select: { bannerImageUrl: true, themeColor: true },
+  const guest = await prisma.guest.findUnique({
+    where: { token },
+    select: {
+      plusOnesAllowed: true,
+      plusOneDetails: true,
+      event: {
+        select: { publicId: true, bannerImageUrl: true, themeColor: true },
+      },
+    },
   });
-  if (!event) notFound();
+  if (!guest || guest.event.publicId !== publicId) notFound();
+  const plusOneDetails = (guest.plusOneDetails as { name?: string; email?: string }[] | null) ?? [];
   return (
     <RsvpForm
-      publicId={publicId}
+      publicId={guest.event.publicId}
       token={token}
-      bannerImageUrl={event.bannerImageUrl}
-      themeColor={event.themeColor}
+      bannerImageUrl={guest.event.bannerImageUrl}
+      themeColor={guest.event.themeColor}
+      plusOnesAllowed={guest.plusOnesAllowed}
+      initialPlusOneDetails={plusOneDetails}
     />
   );
 }

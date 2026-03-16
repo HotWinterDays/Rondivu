@@ -71,8 +71,9 @@ export function AddGuestForm({ publicId, adminKey }: Props) {
             </div>
             <div>
               <label htmlFor="add-guest-plusones" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                Plus-ones
+                Plus-ones granted
               </label>
+              <p className="mb-1 text-[10px] text-zinc-500">How many additional people can this guest bring? (0–10)</p>
               <input
                 id="add-guest-plusones"
                 name="plusOnesAllowed"

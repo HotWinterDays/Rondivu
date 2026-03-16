@@ -25,7 +25,9 @@ model Event {
   adminKey    String
 
   title       String
-  description String?
+  subtitle    String?  // Short tagline; formerly the "description" that was title-like
+  description String? // Rich text (HTML) for full event details
+
   location    String?
   startTime   DateTime
   endTime     DateTime?
@@ -35,6 +37,9 @@ model Event {
 
   bannerImageUrl String?
   themeColor     String?
+
+  notifyOnRsvpChange Boolean @default(true)
+  notifyOnNewGuest   Boolean @default(false)
 
   createdById String?
   createdBy   User?    @relation("CreatedEvents", fields: [createdById], references: [id], onDelete: SetNull)
@@ -107,6 +112,7 @@ model Guest {
 
   plusOnesAllowed   Int        @default(0)
   plusOnesConfirmed Int        @default(0)
+  plusOneDetails    Json?      // [{name?, email?}, ...] - who each plus-one is
 
   status            RsvpStatus @default(PENDING)
   respondedAt       DateTime?

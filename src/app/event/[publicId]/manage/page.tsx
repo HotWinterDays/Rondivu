@@ -5,6 +5,8 @@ import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { SendInviteButton } from "@/components/SendInviteButton";
 import { AddGuestForm } from "./AddGuestForm";
 import { BulkSendInvitesButton } from "./BulkSendInvitesButton";
+import { DeleteEventButton } from "./DeleteEventButton";
+import { EditEventForm } from "./EditEventForm";
 import { hasAnyUser, isAdminPasswordConfigured, needsMigration, verifyAdminSession } from "@/lib/auth";
 import { isEmailConfigured } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
@@ -35,7 +37,11 @@ export default async function ManageEventPage({
     where: { publicId },
     select: {
       title: true,
+      subtitle: true,
+      description: true,
       adminKey: true,
+      notifyOnRsvpChange: true,
+      notifyOnNewGuest: true,
       guests: {
         select: {
           id: true,
@@ -44,6 +50,7 @@ export default async function ManageEventPage({
           status: true,
           plusOnesAllowed: true,
           plusOnesConfirmed: true,
+          plusOneDetails: true,
           respondedAt: true,
           guestMessage: true,
           token: true,
@@ -121,8 +128,24 @@ export default async function ManageEventPage({
             >
               Open guest page
             </Link>
+            <DeleteEventButton publicId={publicId} adminKey={key} />
           </div>
         </div>
+
+        <details className="mt-8 group">
+          <summary className="cursor-pointer text-sm font-medium text-zinc-700 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50">
+            Edit event details
+          </summary>
+          <EditEventForm
+            publicId={publicId}
+            adminKey={key}
+            initialTitle={event.title}
+            initialSubtitle={event.subtitle}
+            initialDescription={event.description}
+            initialNotifyOnRsvpChange={event.notifyOnRsvpChange}
+            initialNotifyOnNewGuest={event.notifyOnNewGuest}
+          />
+        </details>
 
         <div className="mt-8 grid gap-4 md:grid-cols-5">
           <Stat label="Invited" value={counts.invited} />
@@ -178,9 +201,14 @@ export default async function ManageEventPage({
                     <div className="truncate text-sm font-medium">{g.name}</div>
                     <div className="mt-0.5 text-xs text-zinc-600 dark:text-zinc-400">
                       {g.email ? g.email : "No email"} · Status: {g.status} · Plus-ones: {g.plusOnesConfirmed}/
-                      {g.plusOnesAllowed}
+                      {g.plusOnesAllowed} (granted)
                       {g.respondedAt ? ` · Responded: ${new Date(g.respondedAt).toLocaleString()}` : ""}
                     </div>
+                    {formatPlusOneDetails(g.plusOneDetails) ? (
+                      <div className="mt-2 text-xs text-zinc-700 dark:text-zinc-300">
+                        <span className="font-medium">Plus-ones:</span> {formatPlusOneDetails(g.plusOneDetails)}
+                      </div>
+                    ) : null}
                     {g.guestMessage ? (
                       <div className="mt-2 text-sm text-zinc-800 dark:text-zinc-200">
                         <span className="font-medium">Guest note:</span> {g.guestMessage}
@@ -227,6 +255,18 @@ export default async function ManageEventPage({
       </div>
     </div>
   );
+}
+
+function formatPlusOneDetails(details: unknown): string {
+  if (!details || !Array.isArray(details)) return "";
+  const parts = (details as { name?: string; email?: string }[])
+    .filter((p) => (p.name ?? "").trim() || (p.email ?? "").trim())
+    .map((p) => {
+      const n = (p.name ?? "").trim();
+      const e = (p.email ?? "").trim();
+      return n && e ? `${n} (${e})` : n || e || "";
+    });
+  return parts.join("; ") || "";
 }
 
 function Stat({ label, value }: { label: string; value: number }) {

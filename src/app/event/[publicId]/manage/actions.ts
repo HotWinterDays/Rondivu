@@ -1,9 +1,10 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSetting, setSetting } from "@/lib/settings";
-import { buildRsvpUrlFromConfig, getAppBaseUrl, isEmailConfigured, sendInvite } from "@/lib/email";
-import { guestInputSchema } from "@/lib/validation";
+import { buildRsvpUrlFromConfig, getAppBaseUrl, isEmailConfigured, sendInvite, sendNewGuestNotification } from "@/lib/email";
+import { guestInputSchema, updateEventSchema } from "@/lib/validation";
 import { newGuestToken } from "@/lib/ids";
 
 const BULK_SEND_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
@@ -18,7 +19,7 @@ export async function addGuestAction(formData: FormData) {
 
   const event = await prisma.event.findUnique({
     where: { publicId },
-    select: { id: true, adminKey: true },
+    select: { id: true, adminKey: true, title: true, hostEmail: true, notifyOnNewGuest: true },
   });
 
   if (!event || event.adminKey !== adminKey) {
@@ -49,6 +50,17 @@ export async function addGuestAction(formData: FormData) {
       token: newGuestToken(),
     },
   });
+
+  if (event.notifyOnNewGuest && event.hostEmail) {
+    const baseUrl = await getAppBaseUrl();
+    const manageUrl = `${baseUrl}/event/${publicId}/manage?key=${adminKey}`;
+    sendNewGuestNotification({
+      hostEmail: event.hostEmail,
+      eventTitle: event.title,
+      guestName: name,
+      manageUrl,
+    }).catch(() => {});
+  }
 
   return { ok: true as const };
 }
@@ -176,4 +188,70 @@ export async function bulkSendInvitesAction(formData: FormData) {
     skipped: withEmail.length - sent - failed,
     failed,
   };
+}
+
+export async function updateEventAction(formData: FormData) {
+  const publicId = String(formData.get("publicId") ?? "");
+  const adminKey = String(formData.get("adminKey") ?? "");
+
+  if (!publicId || !adminKey) {
+    return { ok: false as const, error: "Missing parameters" };
+  }
+
+  const event = await prisma.event.findUnique({
+    where: { publicId },
+    select: { id: true, adminKey: true },
+  });
+
+  if (!event || event.adminKey !== adminKey) {
+    return { ok: false as const, error: "Invalid or unauthorized" };
+  }
+
+  const parsed = updateEventSchema.safeParse({
+    title: formData.get("title"),
+    subtitle: formData.get("subtitle"),
+    description: formData.get("description"),
+    notifyOnRsvpChange: formData.get("notifyOnRsvpChange"),
+    notifyOnNewGuest: formData.get("notifyOnNewGuest"),
+  });
+
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    return { ok: false as const, error: (first?.message as string) ?? "Invalid data" };
+  }
+
+  const { title, subtitle, description, notifyOnRsvpChange, notifyOnNewGuest } = parsed.data;
+  await prisma.event.update({
+    where: { id: event.id },
+    data: {
+      title,
+      subtitle: subtitle ?? null,
+      description: description ?? null,
+      notifyOnRsvpChange,
+      notifyOnNewGuest,
+    },
+  });
+
+  return { ok: true as const };
+}
+
+export async function deleteEventAction(formData: FormData) {
+  const publicId = String(formData.get("publicId") ?? "");
+  const adminKey = String(formData.get("adminKey") ?? "");
+
+  if (!publicId || !adminKey) {
+    return { ok: false as const, error: "Missing parameters" };
+  }
+
+  const event = await prisma.event.findUnique({
+    where: { publicId },
+    select: { id: true, adminKey: true },
+  });
+
+  if (!event || event.adminKey !== adminKey) {
+    return { ok: false as const, error: "Invalid or unauthorized" };
+  }
+
+  await prisma.event.delete({ where: { id: event.id } });
+  redirect("/");
 }

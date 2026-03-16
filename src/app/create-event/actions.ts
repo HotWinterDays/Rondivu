@@ -22,6 +22,7 @@ export async function createEventAction(formData: FormData) {
 
   const parsed = createEventSchema.safeParse({
     title: formData.get("title"),
+    subtitle: formData.get("subtitle"),
     description: formData.get("description"),
     location: formData.get("location"),
     startTime: formData.get("startTime"),
@@ -31,6 +32,8 @@ export async function createEventAction(formData: FormData) {
     guests: JSON.parse(guestsJson),
     bannerImageUrl: bannerImageUrl ?? "",
     themeColor: formData.get("themeColor") ?? "",
+    notifyOnRsvpChange: formData.get("notifyOnRsvpChange") ?? "",
+    notifyOnNewGuest: formData.get("notifyOnNewGuest") ?? "",
   });
 
   if (!parsed.success) {
@@ -41,7 +44,20 @@ export async function createEventAction(formData: FormData) {
     };
   }
 
-  const { title, description, location, startTime, endTime, hostName, hostEmail, guests, themeColor } = parsed.data;
+  const {
+    title,
+    subtitle,
+    description,
+    location,
+    startTime,
+    endTime,
+    hostName,
+    hostEmail,
+    guests,
+    themeColor,
+    notifyOnRsvpChange,
+    notifyOnNewGuest,
+  } = parsed.data;
   const publicId = newPublicId();
   const adminKey = newAdminKey();
 
@@ -51,7 +67,8 @@ export async function createEventAction(formData: FormData) {
       adminKey,
       createdById: session.userId || undefined,
       title,
-      description,
+      subtitle: subtitle ?? undefined,
+      description: description ?? undefined,
       location,
       startTime: new Date(startTime),
       endTime: endTime ? new Date(endTime) : null,
@@ -59,6 +76,8 @@ export async function createEventAction(formData: FormData) {
       hostEmail,
       bannerImageUrl: bannerImageUrl ?? undefined,
       themeColor: themeColor ?? undefined,
+      notifyOnRsvpChange: notifyOnRsvpChange ?? true,
+      notifyOnNewGuest: notifyOnNewGuest ?? false,
       guests: {
         create: guests.map((g) => ({
           name: g.name,

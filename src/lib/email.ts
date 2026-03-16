@@ -299,6 +299,75 @@ Sent by Rondivu
   return { ok: true };
 }
 
+export type RsvpChangeNotificationParams = {
+  hostEmail: string;
+  eventTitle: string;
+  guestName: string;
+  status: string;
+  plusOnesConfirmed: number;
+  manageUrl: string;
+};
+
+export async function sendRsvpChangeNotification(params: RsvpChangeNotificationParams): Promise<SendResult> {
+  const cfg = await getConfig();
+  if (cfg.provider === "none") {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[email] no-op: would send RSVP change notification to", params.hostEmail);
+    }
+    return { ok: true };
+  }
+  const from = cfg.emailFrom;
+  const subject = `RSVP update: ${params.guestName} – ${params.eventTitle}`;
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #333; max-width: 500px; margin: 0 auto; padding: 20px;">
+  <p>${escapeHtml(params.guestName)} updated their RSVP for <strong>${escapeHtml(params.eventTitle)}</strong>.</p>
+  <p><strong>Status:</strong> ${escapeHtml(params.status)}<br/><strong>Plus-ones:</strong> ${params.plusOnesConfirmed}</p>
+  <p><a href="${escapeHtml(params.manageUrl)}" style="display: inline-block; background: #18181b; color: white; padding: 10px 20px; border-radius: 9999px; text-decoration: none; margin-top: 8px;">View event</a></p>
+  <p style="margin-top: 24px; font-size: 14px; color: #666;">Rondivu</p>
+</body>
+</html>`;
+  const text = `${params.guestName} updated their RSVP for ${params.eventTitle}. Status: ${params.status}, Plus-ones: ${params.plusOnesConfirmed}. View: ${params.manageUrl}`;
+  if (cfg.provider === "smtp") return sendViaSmtp({ to: params.hostEmail, from, subject, html, text, cfg });
+  if (cfg.provider === "resend") return sendViaResend({ to: params.hostEmail, from, subject, html, text, cfg });
+  return { ok: true };
+}
+
+export type NewGuestNotificationParams = {
+  hostEmail: string;
+  eventTitle: string;
+  guestName: string;
+  manageUrl: string;
+};
+
+export async function sendNewGuestNotification(params: NewGuestNotificationParams): Promise<SendResult> {
+  const cfg = await getConfig();
+  if (cfg.provider === "none") {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[email] no-op: would send new guest notification to", params.hostEmail);
+    }
+    return { ok: true };
+  }
+  const from = cfg.emailFrom;
+  const subject = `New guest added: ${params.guestName} – ${params.eventTitle}`;
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #333; max-width: 500px; margin: 0 auto; padding: 20px;">
+  <p>A new guest <strong>${escapeHtml(params.guestName)}</strong> was added to <strong>${escapeHtml(params.eventTitle)}</strong>.</p>
+  <p><a href="${escapeHtml(params.manageUrl)}" style="display: inline-block; background: #18181b; color: white; padding: 10px 20px; border-radius: 9999px; text-decoration: none; margin-top: 8px;">View event</a></p>
+  <p style="margin-top: 24px; font-size: 14px; color: #666;">Rondivu</p>
+</body>
+</html>`;
+  const text = `New guest ${params.guestName} was added to ${params.eventTitle}. View: ${params.manageUrl}`;
+  if (cfg.provider === "smtp") return sendViaSmtp({ to: params.hostEmail, from, subject, html, text, cfg });
+  if (cfg.provider === "resend") return sendViaResend({ to: params.hostEmail, from, subject, html, text, cfg });
+  return { ok: true };
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
