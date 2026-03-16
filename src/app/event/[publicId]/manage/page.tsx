@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { SendInviteButton } from "@/components/SendInviteButton";
+import { isEmailConfigured } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
 export default async function ManageEventPage({
@@ -58,6 +61,7 @@ export default async function ManageEventPage({
     );
   }
 
+  const emailConfigured = isEmailConfigured();
   const filteredGuests =
     status && status !== "ALL" ? event.guests.filter((g) => g.status === status) : event.guests;
 
@@ -162,12 +166,23 @@ export default async function ManageEventPage({
                     <div className="break-all text-xs text-zinc-700 dark:text-zinc-300">
                       {`/e/${publicId}/g/${g.token}`}
                     </div>
-                    <Link
-                      href={`/e/${encodeURIComponent(publicId)}/g/${encodeURIComponent(g.token)}`}
-                      className="inline-flex h-9 items-center justify-center rounded-full bg-zinc-950 px-4 text-xs font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-                    >
-                      Open RSVP
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CopyLinkButton url={`/e/${publicId}/g/${g.token}`} />
+                      {emailConfigured && (
+                        <SendInviteButton
+                          publicId={publicId}
+                          adminKey={key}
+                          guestToken={g.token}
+                          guestEmail={g.email}
+                        />
+                      )}
+                      <Link
+                        href={`/e/${encodeURIComponent(publicId)}/g/${encodeURIComponent(g.token)}`}
+                        className="inline-flex h-9 items-center justify-center rounded-full bg-zinc-950 px-4 text-xs font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                      >
+                        Open RSVP
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
