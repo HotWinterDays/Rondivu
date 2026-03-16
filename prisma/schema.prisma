@@ -33,12 +33,16 @@ model Event {
   hostName    String
   hostEmail   String
 
+  createdById String?
+  createdBy   User?    @relation("CreatedEvents", fields: [createdById], references: [id], onDelete: SetNull)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   guests      Guest[]
 
   @@index([publicId])
+  @@index([createdById])
 }
 
 enum UserRole {
@@ -59,6 +63,7 @@ model User {
   updatedAt        DateTime @updatedAt
 
   invitedUsers     UserInvite[] @relation("InvitedBy")
+  createdEvents    Event[]       @relation("CreatedEvents")
 }
 
 model UserInvite {

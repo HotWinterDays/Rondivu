@@ -14,6 +14,10 @@ Self-hosted, minimalist invite and RSVP kit for creating events, managing guest 
 |-------|----------|
 | ![User management](./docs/users.png) | ![Email settings](./docs/settings.png) |
 
+| Public event page | RSVP form |
+|-------------------|------------|
+| ![Public event page](./docs/event-public.png) | ![RSVP form](./docs/rsvp.png) |
+
 ## Tech stack
 
 - **Next.js 16** (App Router), **React 19**, **TypeScript**
@@ -31,6 +35,7 @@ Self-hosted, minimalist invite and RSVP kit for creating events, managing guest 
 - Public event page (`/e/[id]`) — event info only, no guest list
 - RSVP page (`/e/[id]/g/[token]`) — Going / Maybe / Not going, plus-ones, note to host
 - Admin dashboard (`/event/[id]/manage?key=...`) — counts, copy link, send invite by email
+- **Your events** — logged-in creators see their events on the home page with Manage and View links
 
 ### Users & auth
 

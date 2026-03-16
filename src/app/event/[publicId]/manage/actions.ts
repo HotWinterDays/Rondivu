@@ -1,7 +1,57 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { getSetting, setSetting } from "@/lib/settings";
 import { buildRsvpUrlFromConfig, isEmailConfigured, sendInvite } from "@/lib/email";
+import { guestInputSchema } from "@/lib/validation";
+import { newGuestToken } from "@/lib/ids";
+
+const BULK_SEND_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
+
+export async function addGuestAction(formData: FormData) {
+  const publicId = String(formData.get("publicId") ?? "");
+  const adminKey = String(formData.get("adminKey") ?? "");
+
+  if (!publicId || !adminKey) {
+    return { ok: false as const, error: "Missing parameters" };
+  }
+
+  const event = await prisma.event.findUnique({
+    where: { publicId },
+    select: { id: true, adminKey: true },
+  });
+
+  if (!event || event.adminKey !== adminKey) {
+    return { ok: false as const, error: "Invalid or unauthorized" };
+  }
+
+  const parsed = guestInputSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    plusOnesAllowed: formData.get("plusOnesAllowed"),
+    note: formData.get("note"),
+  });
+
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    return { ok: false as const, error: (first?.message as string) ?? "Invalid guest data" };
+  }
+
+  const { name, email, plusOnesAllowed, note } = parsed.data;
+
+  await prisma.guest.create({
+    data: {
+      eventId: event.id,
+      name,
+      email: email ?? null,
+      plusOnesAllowed: plusOnesAllowed ?? 0,
+      note: note ?? null,
+      token: newGuestToken(),
+    },
+  });
+
+  return { ok: true as const };
+}
 
 export async function sendInviteAction(formData: FormData) {
   const publicId = String(formData.get("publicId") ?? "");
@@ -48,4 +98,74 @@ export async function sendInviteAction(formData: FormData) {
     return { ok: false as const, error: result.error };
   }
   return { ok: true as const };
+}
+
+export async function bulkSendInvitesAction(formData: FormData) {
+  const publicId = String(formData.get("publicId") ?? "");
+  const adminKey = String(formData.get("adminKey") ?? "");
+
+  if (!publicId || !adminKey) {
+    return { ok: false as const, error: "Missing parameters" };
+  }
+
+  const event = await prisma.event.findUnique({
+    where: { publicId },
+    select: { id: true, adminKey: true, title: true, hostName: true, startTime: true },
+  });
+
+  if (!event || event.adminKey !== adminKey) {
+    return { ok: false as const, error: "Invalid or unauthorized" };
+  }
+
+  if (!(await isEmailConfigured())) {
+    return { ok: false as const, error: "Email is not configured. Set up email in Settings first." };
+  }
+
+  const cooldownKey = `bulk_send_cooldown_${event.id}`;
+  const lastSend = await getSetting(cooldownKey);
+  if (lastSend) {
+    const elapsed = Date.now() - new Date(lastSend).getTime();
+    if (elapsed < BULK_SEND_COOLDOWN_MS) {
+      const remainingSec = Math.ceil((BULK_SEND_COOLDOWN_MS - elapsed) / 1000);
+      return { ok: false as const, error: `Please wait ${remainingSec}s before sending again.` };
+    }
+  }
+
+  const guests = await prisma.guest.findMany({
+    where: { eventId: event.id },
+    select: { name: true, email: true, token: true },
+  });
+
+  const withEmail = guests.filter((g) => g.email?.trim());
+  if (withEmail.length === 0) {
+    return { ok: false as const, error: "No guests have email addresses." };
+  }
+
+  let sent = 0;
+  let failed = 0;
+  for (const g of withEmail) {
+    const rsvpUrl = await buildRsvpUrlFromConfig(publicId, g.token);
+    const result = await sendInvite({
+      guestName: g.name,
+      guestEmail: g.email!,
+      eventTitle: event.title,
+      hostName: event.hostName,
+      startTime: event.startTime,
+      rsvpUrl,
+    });
+    if (result.ok) sent++;
+    else failed++;
+  }
+
+  await setSetting(cooldownKey, new Date().toISOString());
+
+  if (failed > 0 && sent === 0) {
+    return { ok: false as const, error: `Failed to send all invites. ${failed} failed.` };
+  }
+  return {
+    ok: true as const,
+    sent,
+    skipped: withEmail.length - sent - failed,
+    failed,
+  };
 }

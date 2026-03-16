@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { SendInviteButton } from "@/components/SendInviteButton";
+import { AddGuestForm } from "./AddGuestForm";
+import { BulkSendInvitesButton } from "./BulkSendInvitesButton";
 import { hasAnyUser, isAdminPasswordConfigured, needsMigration, verifyAdminSession } from "@/lib/auth";
 import { isEmailConfigured } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
@@ -75,6 +77,7 @@ export default async function ManageEventPage({
   }
 
   const emailConfigured = await isEmailConfigured();
+  const guestCountWithEmail = event.guests.filter((g) => g.email?.trim()).length;
   const filteredGuests =
     status && status !== "ALL" ? event.guests.filter((g) => g.status === status) : event.guests;
 
@@ -137,7 +140,14 @@ export default async function ManageEventPage({
                 Filter by RSVP status and copy each guest’s RSVP link.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <BulkSendInvitesButton
+                publicId={publicId}
+                adminKey={key}
+                guestCountWithEmail={guestCountWithEmail}
+                emailConfigured={emailConfigured}
+              />
+              <div className="flex flex-wrap gap-2">
               {(["ALL", "PENDING", "ACCEPTED", "MAYBE", "DECLINED"] as const).map((s) => (
                 <Link
                   key={s}
@@ -152,10 +162,12 @@ export default async function ManageEventPage({
                   {s}
                 </Link>
               ))}
+              </div>
             </div>
           </div>
 
           <div className="mt-4 space-y-3">
+            <AddGuestForm publicId={publicId} adminKey={key} />
             {filteredGuests.map((g) => (
               <div
                 key={g.id}
@@ -187,14 +199,12 @@ export default async function ManageEventPage({
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <CopyLinkButton url={`/e/${publicId}/g/${g.token}`} />
-                      {emailConfigured && (
-                        <SendInviteButton
-                          publicId={publicId}
-                          adminKey={key}
-                          guestToken={g.token}
-                          guestEmail={g.email}
-                        />
-                      )}
+                      <SendInviteButton
+                        publicId={publicId}
+                        adminKey={key}
+                        guestToken={g.token}
+                        guestEmail={g.email}
+                      />
                       <Link
                         href={`/e/${encodeURIComponent(publicId)}/g/${encodeURIComponent(g.token)}`}
                         className="inline-flex h-9 items-center justify-center rounded-full bg-zinc-950 px-4 text-xs font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"

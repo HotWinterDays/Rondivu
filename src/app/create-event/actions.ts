@@ -8,7 +8,7 @@ import { newAdminKey, newGuestToken, newPublicId } from "@/lib/ids";
 import { createEventSchema } from "@/lib/validation";
 
 export async function createEventAction(formData: FormData) {
-  await requirePermission("createEvent", "/create-event");
+  const session = await requirePermission("createEvent", "/create-event");
 
   const rawGuests = formData.get("guests");
   const guestsJson = typeof rawGuests === "string" ? rawGuests : "[]";
@@ -40,6 +40,7 @@ export async function createEventAction(formData: FormData) {
     data: {
       publicId,
       adminKey,
+      createdById: session.userId || undefined,
       title,
       description,
       location,

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 
+import { DateTimeField } from "@/components/DateTimeField";
 import { createEventAction } from "./actions";
 
 type GuestDraft = {
@@ -63,15 +64,15 @@ export default function CreateEventForm() {
               <Field label="Location" name="location" placeholder="123 Main St (optional)" />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Start time" name="startTime" type="datetime-local" required />
-              <Field label="End time" name="endTime" type="datetime-local" />
+              <DateTimeField label="Start time" name="startTime" required />
+              <DateTimeField label="End time" name="endTime" defaultTime="20:00" />
             </div>
             <TextArea label="Description" name="description" placeholder="Details for your guests (optional)" rows={4} />
           </section>
 
           <section className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Host name" name="hostName" placeholder="Martin" required />
+              <Field label="Host name" name="hostName" placeholder="John Smith" required />
               <Field label="Host email" name="hostEmail" placeholder="you@example.com" required />
             </div>
           </section>

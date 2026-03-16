@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { saveEmailConfigAction } from "@/app/settings/actions";
@@ -38,6 +39,7 @@ const defaultConfig: Config = {
 
 export function EmailConfigForm({ initialConfig, className = "" }: Props) {
   const config = { ...defaultConfig, ...initialConfig };
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
 
@@ -49,6 +51,7 @@ export function EmailConfigForm({ initialConfig, className = "" }: Props) {
         startTransition(async () => {
           await saveEmailConfigAction(formData);
           setSaved(true);
+          router.refresh();
           setTimeout(() => setSaved(false), 3000);
         });
       }}

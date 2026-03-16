@@ -41,7 +41,11 @@ export default async function SettingsPage() {
           </div>
         </div>
 
-        <EmailConfigForm initialConfig={config} className="mt-10" />
+        <EmailConfigForm
+          key={`${config.provider}-${config.emailFrom}-${config.smtpHost}-${config.smtpPort}`}
+          initialConfig={config}
+          className="mt-10"
+        />
 
         <div className="mt-10">
           <TestEmailForm disabled={!emailConfigured} />
