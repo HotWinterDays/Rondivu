@@ -36,7 +36,13 @@ export function RsvpForm({ publicId, token }: Props) {
 
         {result ? (
           <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/30 dark:bg-emerald-950/30 dark:text-emerald-100">
-            {result}
+            <p>{result}</p>
+            <Link
+              href={`/e/${publicId}`}
+              className="mt-3 inline-block text-sm font-medium underline underline-offset-4"
+            >
+              View event details
+            </Link>
           </div>
         ) : null}
 
