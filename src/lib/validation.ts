@@ -63,9 +63,38 @@ export const createEventSchema = z.object({
     .string()
     .optional()
     .transform((v) => v === "on" || v === "true"),
+  allowGuestComments: z
+    .string()
+    .optional()
+    .transform((v) => v === "on" || v === "true"),
+  notifyOnNewComment: z
+    .string()
+    .optional()
+    .transform((v) => v === "on" || v === "true"),
+  notifyGuestsOnReply: z
+    .string()
+    .optional()
+    .transform((v) => v === "on" || v === "true"),
+  emailGuestsEventDetailsOnRsvp: z
+    .string()
+    .optional()
+    .transform((v) => v === "on" || v === "true"),
 });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;
+
+export const addCommentSchema = z.object({
+  content: z.string().trim().min(1, "Comment cannot be empty").max(2000),
+});
+
+export const addReplySchema = z.object({
+  content: z.string().trim().min(1, "Reply cannot be empty").max(2000),
+});
+
+export const REACTION_TYPES = ["thumbs_up", "thumbs_down", "laugh", "heart", "sad"] as const;
+export type ReactionType = (typeof REACTION_TYPES)[number];
+
+export const reactionTypeSchema = z.enum(REACTION_TYPES);
 
 export const updateEventSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(140),
@@ -90,6 +119,22 @@ export const updateEventSchema = z.object({
     .optional()
     .transform((v) => v === "on"),
   showAttendeesToGuests: z
+    .string()
+    .optional()
+    .transform((v) => v === "on"),
+  allowGuestComments: z
+    .string()
+    .optional()
+    .transform((v) => v === "on"),
+  notifyOnNewComment: z
+    .string()
+    .optional()
+    .transform((v) => v === "on"),
+  notifyGuestsOnReply: z
+    .string()
+    .optional()
+    .transform((v) => v === "on"),
+  emailGuestsEventDetailsOnRsvp: z
     .string()
     .optional()
     .transform((v) => v === "on"),

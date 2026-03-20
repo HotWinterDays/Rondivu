@@ -2,12 +2,33 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-import { rsvpAction } from "./actions";
+import { addCommentAction, rsvpAction } from "./actions";
+import { CommentCard } from "@/components/event-comments/CommentCard";
 
 type PlusOneDetail = { name?: string; email?: string };
 
 type Attendee = { id: string; name: string; plusOnesConfirmed: number };
+
+type ReplyItem = {
+  id: string;
+  content: string;
+  createdAt: Date;
+  guest: { name: string };
+  reactions?: ReactionItem[];
+};
+
+type ReactionItem = { type: string; guestId: string };
+
+type CommentItem = {
+  id: string;
+  content: string;
+  createdAt: Date;
+  guest: { name: string };
+  replies?: ReplyItem[];
+  reactions?: ReactionItem[];
+};
 
 type Props = {
   publicId: string;
@@ -24,6 +45,10 @@ type Props = {
   initialPlusOneDetails?: PlusOneDetail[];
   showAttendeesToGuests?: boolean;
   attendees?: Attendee[];
+  allowGuestComments?: boolean;
+  comments?: CommentItem[];
+  guestHasRsvped?: boolean;
+  currentGuestId?: string;
 };
 
 export function RsvpForm({
@@ -41,7 +66,12 @@ export function RsvpForm({
   initialPlusOneDetails = [],
   showAttendeesToGuests = false,
   attendees = [],
+  allowGuestComments = false,
+  comments = [],
+  guestHasRsvped = false,
+  currentGuestId,
 }: Props) {
+  const router = useRouter();
   const accentColor = themeColor || "#3b82f6";
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<"ACCEPTED" | "DECLINED" | "MAYBE">("ACCEPTED");
@@ -51,6 +81,8 @@ export function RsvpForm({
   const [guestMessage, setGuestMessage] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [commentError, setCommentError] = useState<string | null>(null);
+  const [commentPending, setCommentPending] = useState(false);
 
   const confirmedCount = useMemo(
     () => plusOneDetails.filter((p) => (p.name ?? "").trim() || (p.email ?? "").trim()).length,
@@ -113,6 +145,74 @@ export function RsvpForm({
           </div>
         ) : null}
 
+        {allowGuestComments ? (
+          <div
+            className="mb-6 rounded-2xl border-2 bg-zinc-50 p-5 dark:bg-white/5"
+            style={{ borderColor: accentColor }}
+          >
+            <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Guest comments</h3>
+            {comments.length > 0 ? (
+              <div className="mt-3 space-y-4">
+                {comments.map((c) => (
+                  <CommentCard
+                    key={c.id}
+                    comment={c}
+                    token={token}
+                    guestHasRsvped={guestHasRsvped}
+                    currentGuestId={currentGuestId}
+                    accentColor={accentColor}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">No comments yet.</p>
+            )}
+            {guestHasRsvped ? (
+              <form
+                className="mt-4"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const form = e.currentTarget;
+                  const formData = new FormData(form);
+                  formData.set("token", token);
+                  setCommentError(null);
+                  setCommentPending(true);
+                  const res = await addCommentAction(formData);
+                  setCommentPending(false);
+                  if (res.ok) {
+                    form.reset();
+                    router.refresh();
+                  } else {
+                    setCommentError(res.error ?? "Could not post comment.");
+                  }
+                }}
+              >
+                <textarea
+                  name="content"
+                  rows={3}
+                  maxLength={2000}
+                  placeholder="Add a comment..."
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:border-white/10 dark:bg-zinc-950 dark:placeholder:text-zinc-500 dark:focus:border-white/20 dark:focus:ring-white/10"
+                />
+                {commentError ? (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">{commentError}</p>
+                ) : null}
+                <button
+                  type="submit"
+                  disabled={commentPending}
+                  className="mt-2 rounded-full bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-200 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                >
+                  {commentPending ? "Posting..." : "Post comment"}
+                </button>
+              </form>
+            ) : (
+              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                Submit your RSVP above to leave a comment.
+              </p>
+            )}
+          </div>
+        ) : null}
+
         <h2 className="text-lg font-semibold tracking-tight">RSVP</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Submit your response below.</p>
 
@@ -126,7 +226,7 @@ export function RsvpForm({
           <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/30 dark:bg-emerald-950/30 dark:text-emerald-100">
             <p>{result}</p>
             <Link
-              href={`/e/${publicId}`}
+              href={`/e/${publicId}?token=${token}`}
               className="mt-3 inline-block text-sm font-medium underline underline-offset-4"
             >
               View event details
@@ -147,6 +247,7 @@ export function RsvpForm({
                 return;
               }
               setResult("RSVP saved. Thank you!");
+              router.refresh();
             });
           }}
         >
@@ -232,7 +333,7 @@ export function RsvpForm({
 
           <div className="flex items-center justify-end gap-3">
             <Link
-              href={`/e/${publicId}`}
+              href={`/e/${publicId}?token=${token}`}
               className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-200 px-6 text-sm font-medium hover:bg-zinc-50 dark:border-white/10 dark:hover:bg-white/5"
             >
               Back

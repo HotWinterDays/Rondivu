@@ -1,12 +1,20 @@
 import { notFound } from "next/navigation";
 
+import { EventCommentsSection } from "@/app/e/[publicId]/EventCommentsSection";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export default async function GuestEventPage({ params }: { params: Promise<{ publicId: string }> }) {
+export default async function GuestEventPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ publicId: string }>;
+  searchParams: Promise<{ token?: string }>;
+}) {
   const { publicId } = await params;
+  const { token: tokenParam } = await searchParams;
 
   const event = await prisma.event.findUnique({
     where: { publicId },
@@ -21,15 +29,60 @@ export default async function GuestEventPage({ params }: { params: Promise<{ pub
       bannerImageUrl: true,
       themeColor: true,
       showAttendeesToGuests: true,
+      allowGuestComments: true,
       guests: {
         where: { status: { in: ["ACCEPTED", "MAYBE"] } },
         select: { id: true, name: true, status: true, plusOnesConfirmed: true },
         orderBy: { name: "asc" },
       },
+      comments: {
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          guest: { select: { name: true } },
+          replies: {
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              guest: { select: { name: true } },
+              reactions: { select: { type: true, guestId: true } },
+            },
+            orderBy: { createdAt: "asc" },
+          },
+          reactions: {
+            select: { type: true, guestId: true },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
   if (!event) notFound();
+
+  let guestToken: string | null = null;
+  let guestHasRsvped = false;
+  let currentGuestId: string | null = null;
+
+  if (tokenParam?.trim()) {
+    const guest = await prisma.guest.findFirst({
+      where: {
+        token: tokenParam.trim(),
+        event: { publicId },
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+    if (guest) {
+      guestToken = tokenParam.trim();
+      guestHasRsvped = guest.status !== "PENDING";
+      currentGuestId = guest.id;
+    }
+  }
 
   const start = new Date(event.startTime);
   const end = event.endTime ? new Date(event.endTime) : null;
@@ -101,6 +154,16 @@ export default async function GuestEventPage({ params }: { params: Promise<{ pub
               ))}
             </ul>
           </div>
+        ) : null}
+
+        {event.allowGuestComments ? (
+          <EventCommentsSection
+            comments={event.comments}
+            accentColor={accentColor}
+            token={guestToken}
+            guestHasRsvped={guestHasRsvped}
+            currentGuestId={currentGuestId}
+          />
         ) : null}
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { updateEventAction } from "./actions";
 
@@ -13,6 +14,10 @@ type Props = {
   initialNotifyOnRsvpChange: boolean;
   initialNotifyOnNewGuest: boolean;
   initialShowAttendeesToGuests: boolean;
+  initialAllowGuestComments: boolean;
+  initialNotifyOnNewComment: boolean;
+  initialNotifyGuestsOnReply: boolean;
+  initialEmailGuestsEventDetailsOnRsvp: boolean;
 };
 
 export function EditEventForm({
@@ -24,6 +29,10 @@ export function EditEventForm({
   initialNotifyOnRsvpChange,
   initialNotifyOnNewGuest,
   initialShowAttendeesToGuests,
+  initialAllowGuestComments,
+  initialNotifyOnNewComment,
+  initialNotifyGuestsOnReply,
+  initialEmailGuestsEventDetailsOnRsvp,
 }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +42,10 @@ export function EditEventForm({
   const [notifyOnRsvpChange, setNotifyOnRsvpChange] = useState(initialNotifyOnRsvpChange);
   const [notifyOnNewGuest, setNotifyOnNewGuest] = useState(initialNotifyOnNewGuest);
   const [showAttendeesToGuests, setShowAttendeesToGuests] = useState(initialShowAttendeesToGuests);
+  const [allowGuestComments, setAllowGuestComments] = useState(initialAllowGuestComments);
+  const [notifyOnNewComment, setNotifyOnNewComment] = useState(initialNotifyOnNewComment);
+  const [notifyGuestsOnReply, setNotifyGuestsOnReply] = useState(initialNotifyGuestsOnReply);
+  const [emailGuestsEventDetailsOnRsvp, setEmailGuestsEventDetailsOnRsvp] = useState(initialEmailGuestsEventDetailsOnRsvp);
 
   return (
     <form
@@ -47,9 +60,15 @@ export function EditEventForm({
         formData.set("notifyOnRsvpChange", notifyOnRsvpChange ? "on" : "");
         formData.set("notifyOnNewGuest", notifyOnNewGuest ? "on" : "");
         formData.set("showAttendeesToGuests", showAttendeesToGuests ? "on" : "");
+        formData.set("allowGuestComments", allowGuestComments ? "on" : "");
+        formData.set("notifyOnNewComment", notifyOnNewComment ? "on" : "");
+        formData.set("notifyGuestsOnReply", notifyGuestsOnReply ? "on" : "");
+        formData.set("emailGuestsEventDetailsOnRsvp", emailGuestsEventDetailsOnRsvp ? "on" : "");
         startTransition(async () => {
           const res = await updateEventAction(formData);
-          if (!res.ok) setError(res.error ?? "Could not update event.");
+          if (!res.ok) {
+            setError(res.error ?? "Could not update event.");
+          }
         });
       }}
     >
@@ -108,6 +127,42 @@ export function EditEventForm({
               className="rounded border-zinc-300"
             />
             Let guests see who else has RSVPed
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={allowGuestComments}
+              onChange={(e) => setAllowGuestComments(e.target.checked)}
+              className="rounded border-zinc-300"
+            />
+            Allow guests to leave comments
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={notifyOnNewComment}
+              onChange={(e) => setNotifyOnNewComment(e.target.checked)}
+              className="rounded border-zinc-300"
+            />
+            Email me when guests comment or reply
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={notifyGuestsOnReply}
+              onChange={(e) => setNotifyGuestsOnReply(e.target.checked)}
+              className="rounded border-zinc-300"
+            />
+            Email guests when someone replies to their comment
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={emailGuestsEventDetailsOnRsvp}
+              onChange={(e) => setEmailGuestsEventDetailsOnRsvp(e.target.checked)}
+              className="rounded border-zinc-300"
+            />
+            Email guests event details when they RSVP Maybe or Going
           </label>
         </div>
       </div>

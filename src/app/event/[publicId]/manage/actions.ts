@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSetting, setSetting } from "@/lib/settings";
@@ -214,6 +215,10 @@ export async function updateEventAction(formData: FormData) {
     notifyOnRsvpChange: formData.get("notifyOnRsvpChange"),
     notifyOnNewGuest: formData.get("notifyOnNewGuest"),
     showAttendeesToGuests: formData.get("showAttendeesToGuests"),
+    allowGuestComments: formData.get("allowGuestComments"),
+    notifyOnNewComment: formData.get("notifyOnNewComment"),
+    notifyGuestsOnReply: formData.get("notifyGuestsOnReply"),
+    emailGuestsEventDetailsOnRsvp: formData.get("emailGuestsEventDetailsOnRsvp"),
   });
 
   if (!parsed.success) {
@@ -221,7 +226,7 @@ export async function updateEventAction(formData: FormData) {
     return { ok: false as const, error: (first?.message as string) ?? "Invalid data" };
   }
 
-  const { title, subtitle, description, notifyOnRsvpChange, notifyOnNewGuest, showAttendeesToGuests } = parsed.data;
+  const { title, subtitle, description, notifyOnRsvpChange, notifyOnNewGuest, showAttendeesToGuests, allowGuestComments, notifyOnNewComment, notifyGuestsOnReply, emailGuestsEventDetailsOnRsvp } = parsed.data;
   await prisma.event.update({
     where: { id: event.id },
     data: {
@@ -231,8 +236,14 @@ export async function updateEventAction(formData: FormData) {
       notifyOnRsvpChange,
       notifyOnNewGuest,
       showAttendeesToGuests: showAttendeesToGuests ?? false,
+      allowGuestComments: allowGuestComments ?? false,
+      notifyOnNewComment: notifyOnNewComment ?? false,
+      notifyGuestsOnReply: notifyGuestsOnReply ?? false,
+      emailGuestsEventDetailsOnRsvp: emailGuestsEventDetailsOnRsvp ?? false,
     },
   });
+
+  revalidatePath(`/event/${publicId}/manage`);
 
   return { ok: true as const };
 }

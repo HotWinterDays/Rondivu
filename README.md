@@ -24,34 +24,51 @@ Self-hosted, minimalist invite and RSVP kit for creating events, managing guest 
 
 ### Guests & RSVP
 
-- **Named guest lists** — per-guest plus-ones (granted by creator), internal notes
+- **Named guest lists** — per-guest plus-ones (granted by creator), internal notes, optional email per guest
 - **Plus-ones** — creators grant a number (0–10) per guest; guests who are granted plus-ones can add name and email for each person they are bringing
 - **Per-guest RSVP links** — private links, not exposed on the public event page
-- **RSVP page** — Going / Maybe / Not going, plus-one details (when granted), note to host
-- **Public event page** — event info (title, subtitle, description, date, location, host) and banner; no guest list
+- **RSVP page** — Going / Maybe / Not going, plus-one details (when granted), note to host; after saving, the page updates without a manual reload so comments and status stay in sync
+- **Public event page** (`/e/[publicId]`) — event info (title, subtitle, description, date, location, host) and banner; optional **who’s coming** list when the host enables “Let guests see who else has RSVPed”
+- **Event details + personal link** — optional email to guests (when enabled) after they RSVP **Going** or **Maybe**, with a link to the public event page including `?token=...` so they can open details and use guest-only features without hunting for the RSVP link again
+
+### Guest comments (optional)
+
+- **Host toggle** — “Allow guests to leave comments” per event
+- **After RSVP** — guests who have responded can post comments, react (emoji), and reply on the RSVP page
+- **Public page with token** — same interactive comments when guests open `/e/[publicId]?token=...` (token matches their guest record); without a token, comments are read-only for visitors
+- **Host notifications** — optional email when guests comment or reply
+- **Reply notifications** — optional email to the original commenter when someone replies to their comment
 
 ### Admin dashboard
 
 - **Manage events** — view counts (invited, accepted, maybe, declined, attendees), filter by status, copy RSVP links, send invites
 - **Send invites** — individual or bulk email invites with event details, banner, and RSVP link
-- **Edit event details** — collapsible section for title, subtitle, description, notification prefs
+- **Edit event details** — collapsible section for title, subtitle, description, and all notification / guest-visibility options (form state stays correct after save)
+- **Guest comments** — when enabled, host can read the comment thread on the manage page
 - **Your events** — logged-in creators see their events on the home page with Manage and View links
 
-### Host notifications
+### Host notifications (per event)
 
-- **RSVP changes** — email host when a guest updates their RSVP
-- **New guest** — email host when a guest is added via the manage dashboard
-- Configurable per event (on by default for RSVP changes, off for new guests)
+| Option | Default | Description |
+|--------|---------|-------------|
+| Email me when a guest changes their RSVP | On | Host notified on RSVP updates |
+| Email me when I add a new guest | Off | Host notified when a guest row is added |
+| Let guests see who else has RSVPed | Off | Public event page shows attendee list |
+| Allow guests to leave comments | Off | Comments, reactions, replies on RSVP / token link |
+| Email me when guests comment or reply | Off | Host notified on new comments/replies |
+| Email guests when someone replies to their comment | Off | Notifies the comment author (if they have email) |
+| Email guests event details when they RSVP Maybe or Going | Off | Sends public page link with `?token=` for easy return |
 
 ### Theming
 
 - **Dark/light mode** — theme toggle in header; persists via `next-themes`; respects system preference
+- **Footer** — site footer on main layouts
 
 ### Users & auth
 
 - **First-run setup** (`/admin/setup`) — create first admin (email + password)
 - **Migration** (`/admin/migrate`) — for existing installs with legacy password-only auth
-- **User management** (`/users`) — invite users, assign Create Event and Modify Settings permissions
+- **User management** (`/users`) — invite users, assign Create Event and Modify Settings permissions; edit or remove users
 - **Permissions** — admins have all; regular users get permissions via invites
 - **Invite flow** — email invite with token; invitee sets password at `/accept-invite/[token]`
 
@@ -75,7 +92,7 @@ Self-hosted, minimalist invite and RSVP kit for creating events, managing guest 
 | `/` | Home; Your events (when logged in) |
 | `/create-event` | Create event (requires permission) |
 | `/create-event/success` | Event created — guest & admin links |
-| `/e/[publicId]` | Public event page (guests) |
+| `/e/[publicId]` | Public event page (guests); add `?token=guestToken` for personalized access / comments when enabled |
 | `/e/[publicId]/g/[token]` | RSVP page (per-guest link) |
 | `/event/[publicId]/manage?key=...` | Admin dashboard |
 | `/admin/setup` | First-run admin setup |
@@ -95,6 +112,8 @@ npm run dev
 ```
 
 Open `http://localhost:3000`. On first visit to Settings, Create event, or an event dashboard, you’ll be prompted to set up or log in.
+
+**Note:** Local SQLite database `prisma/dev.db` is gitignored; each clone runs migrations to create its own DB.
 
 ## Docker
 

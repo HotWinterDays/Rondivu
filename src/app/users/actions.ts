@@ -74,3 +74,80 @@ export async function inviteUserAction(formData: FormData) {
 
   return { ok: true as const };
 }
+
+export async function updateUserAction(formData: FormData) {
+  await requirePermission("modifySettings", "/users");
+
+  const userId = String(formData.get("userId") ?? "");
+  const role = String(formData.get("role") ?? "USER");
+  const canCreateEvent = formData.get("canCreateEvent") === "on" || formData.get("canCreateEvent") === "1";
+  const canModifySettings = formData.get("canModifySettings") === "on" || formData.get("canModifySettings") === "1";
+
+  if (!userId) {
+    return { ok: false as const, error: "Invalid user." };
+  }
+
+  const validRoles = ["ADMIN", "USER"];
+  const safeRole = validRoles.includes(role) ? (role as "ADMIN" | "USER") : "USER";
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true },
+  });
+
+  if (!user) {
+    return { ok: false as const, error: "User not found." };
+  }
+
+  if (safeRole === "USER") {
+    const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
+    if (user.role === "ADMIN" && adminCount <= 1) {
+      return { ok: false as const, error: "Cannot demote the last admin." };
+    }
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      role: safeRole,
+      canCreateEvent: safeRole === "ADMIN" ? true : canCreateEvent,
+      canModifySettings: safeRole === "ADMIN" ? true : canModifySettings,
+    },
+  });
+
+  return { ok: true as const };
+}
+
+export async function deleteUserAction(formData: FormData) {
+  const session = await requirePermission("modifySettings", "/users");
+
+  const userId = String(formData.get("userId") ?? "");
+
+  if (!userId) {
+    return { ok: false as const, error: "Invalid user." };
+  }
+
+  if (session.userId === userId) {
+    return { ok: false as const, error: "You cannot delete your own account." };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true },
+  });
+
+  if (!user) {
+    return { ok: false as const, error: "User not found." };
+  }
+
+  if (user.role === "ADMIN") {
+    const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
+    if (adminCount <= 1) {
+      return { ok: false as const, error: "Cannot delete the last admin." };
+    }
+  }
+
+  await prisma.user.delete({ where: { id: userId } });
+
+  return { ok: true as const };
+}

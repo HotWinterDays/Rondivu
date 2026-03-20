@@ -22,8 +22,10 @@ export default async function GuestRsvpPage({
   const guest = await prisma.guest.findUnique({
     where: { token },
     select: {
+      id: true,
       plusOnesAllowed: true,
       plusOneDetails: true,
+      status: true,
       event: {
         select: {
           publicId: true,
@@ -37,10 +39,35 @@ export default async function GuestRsvpPage({
           bannerImageUrl: true,
           themeColor: true,
           showAttendeesToGuests: true,
+          allowGuestComments: true,
           guests: {
             where: { status: { in: ["ACCEPTED", "MAYBE"] } },
             select: { id: true, name: true, plusOnesConfirmed: true },
             orderBy: { name: "asc" },
+          },
+          comments: {
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              guest: { select: { name: true } },
+              replies: {
+                select: {
+                  id: true,
+                  content: true,
+                  createdAt: true,
+                  guest: { select: { name: true } },
+                  reactions: {
+                    select: { type: true, guestId: true },
+                  },
+                },
+                orderBy: { createdAt: "asc" },
+              },
+              reactions: {
+                select: { type: true, guestId: true },
+              },
+            },
+            orderBy: { createdAt: "asc" },
           },
         },
       },
@@ -67,6 +94,10 @@ export default async function GuestRsvpPage({
       initialPlusOneDetails={plusOneDetails}
       showAttendeesToGuests={guest.event.showAttendeesToGuests}
       attendees={guest.event.guests}
+      allowGuestComments={guest.event.allowGuestComments}
+      comments={guest.event.comments}
+      guestHasRsvped={guest.status !== "PENDING"}
+      currentGuestId={guest.id}
     />
   );
 }

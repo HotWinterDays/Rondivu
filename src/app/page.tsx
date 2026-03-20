@@ -85,14 +85,6 @@ export default async function Home() {
             >
               Create an event
             </a>
-            <a
-              href="https://github.com/HotWinterDays/rondivu"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-200 px-5 text-sm font-medium text-zinc-950 hover:bg-zinc-50 dark:border-white/10 dark:text-white dark:hover:bg-white/5"
-            >
-              View repo
-            </a>
           </div>
         </div>
       </section>

@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth";
 import { InviteUserForm } from "./InviteUserForm";
+import { UserRow } from "./UserRow";
 
 export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
-  await requirePermission("modifySettings", "/users");
+  const session = await requirePermission("modifySettings", "/users");
 
   const [users, pendingInvites] = await Promise.all([
     prisma.user.findMany({
@@ -49,35 +50,7 @@ export default async function UsersPage() {
           <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Active users</h2>
           <ul className="mt-3 space-y-2">
             {users.map((u) => (
-              <li
-                key={u.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-white/10 dark:bg-white/5"
-              >
-                <span className="font-medium text-zinc-950 dark:text-zinc-50">{u.email}</span>
-                <span className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  {u.role === "ADMIN" ? (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
-                      Admin
-                    </span>
-                  ) : (
-                    <>
-                      {u.canCreateEvent && (
-                        <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs dark:bg-white/10">
-                          Create event
-                        </span>
-                      )}
-                      {u.canModifySettings && (
-                        <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs dark:bg-white/10">
-                          Modify settings
-                        </span>
-                      )}
-                      {!u.canCreateEvent && !u.canModifySettings && (
-                        <span className="text-zinc-500">No permissions</span>
-                      )}
-                    </>
-                  )}
-                </span>
-              </li>
+              <UserRow key={u.id} user={u} currentUserId={session?.userId ?? null} />
             ))}
           </ul>
         </section>

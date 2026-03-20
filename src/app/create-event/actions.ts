@@ -35,6 +35,10 @@ export async function createEventAction(formData: FormData) {
     notifyOnRsvpChange: formData.get("notifyOnRsvpChange") ?? "",
     notifyOnNewGuest: formData.get("notifyOnNewGuest") ?? "",
     showAttendeesToGuests: formData.get("showAttendeesToGuests") ?? "",
+    allowGuestComments: formData.get("allowGuestComments") ?? "",
+    notifyOnNewComment: formData.get("notifyOnNewComment") ?? "",
+    notifyGuestsOnReply: formData.get("notifyGuestsOnReply") ?? "",
+    emailGuestsEventDetailsOnRsvp: formData.get("emailGuestsEventDetailsOnRsvp") ?? "",
   });
 
   if (!parsed.success) {
@@ -59,6 +63,10 @@ export async function createEventAction(formData: FormData) {
     notifyOnRsvpChange,
     notifyOnNewGuest,
     showAttendeesToGuests,
+    allowGuestComments,
+    notifyOnNewComment,
+    notifyGuestsOnReply,
+    emailGuestsEventDetailsOnRsvp,
   } = parsed.data;
   const publicId = newPublicId();
   const adminKey = newAdminKey();
@@ -81,6 +89,10 @@ export async function createEventAction(formData: FormData) {
       notifyOnRsvpChange: notifyOnRsvpChange ?? true,
       notifyOnNewGuest: notifyOnNewGuest ?? false,
       showAttendeesToGuests: showAttendeesToGuests ?? false,
+      allowGuestComments: allowGuestComments ?? false,
+      notifyOnNewComment: notifyOnNewComment ?? false,
+      notifyGuestsOnReply: notifyGuestsOnReply ?? false,
+      emailGuestsEventDetailsOnRsvp: emailGuestsEventDetailsOnRsvp ?? false,
       guests: {
         create: guests.map((g) => ({
           name: g.name,

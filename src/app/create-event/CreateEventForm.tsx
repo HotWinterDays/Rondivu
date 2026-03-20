@@ -153,6 +153,22 @@ export default function CreateEventForm() {
                   <input type="checkbox" name="showAttendeesToGuests" className="rounded border-zinc-300" />
                   Let guests see who else has RSVPed
                 </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="allowGuestComments" className="rounded border-zinc-300" />
+                  Allow guests to leave comments
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="notifyOnNewComment" className="rounded border-zinc-300" />
+                  Email me when guests comment or reply
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="notifyGuestsOnReply" className="rounded border-zinc-300" />
+                  Email guests when someone replies to their comment
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="emailGuestsEventDetailsOnRsvp" className="rounded border-zinc-300" />
+                  Email guests event details when they RSVP Maybe or Going
+                </label>
               </div>
             </div>
           </section>

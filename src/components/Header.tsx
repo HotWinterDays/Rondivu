@@ -3,15 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { logoutAction } from "@/app/admin/logout/actions";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 type HeaderProps = {
   canCreateEvent?: boolean;
   canModifySettings?: boolean;
   showUsers?: boolean;
+  isLoggedIn?: boolean;
 };
 
-export function Header({ canCreateEvent, canModifySettings, showUsers }: HeaderProps) {
+export function Header({ canCreateEvent, canModifySettings, showUsers, isLoggedIn }: HeaderProps) {
   const pathname = usePathname();
   const isGuestView = pathname?.startsWith("/e/");
 
@@ -42,6 +44,25 @@ export function Header({ canCreateEvent, canModifySettings, showUsers }: HeaderP
               </Link>
             )}
           </nav>
+        )}
+        {!isGuestView && (
+          isLoggedIn ? (
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="text-sm text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+              >
+                Log out
+              </button>
+            </form>
+          ) : (
+            <Link
+              href="/admin/login"
+              className="text-sm text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+            >
+              Log in
+            </Link>
+          )
         )}
         <ThemeToggle />
         </div>

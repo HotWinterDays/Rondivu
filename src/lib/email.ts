@@ -19,7 +19,7 @@ async function getConfig() {
   return {
     provider: db.provider || (fromEnv("EMAIL_PROVIDER") || "none").toLowerCase(),
     emailFrom: db.emailFrom || fromEnv("EMAIL_FROM") || "Rondivu <noreply@localhost>",
-    appUrl: fromEnv("APP_URL") || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
+    appUrl: fromEnv("APP_URL") || db.appUrl?.trim() || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
     smtpHost: db.smtpHost || fromEnv("SMTP_HOST"),
     smtpPort: db.smtpPort || fromEnv("SMTP_PORT") || "587",
     smtpSecure: db.smtpSecure || fromEnv("SMTP_SECURE") || "false",
@@ -44,6 +44,11 @@ export async function getAppBaseUrl(): Promise<string> {
 export async function buildRsvpUrlFromConfig(publicId: string, guestToken: string): Promise<string> {
   const base = await getAppBaseUrl();
   return `${base}/e/${encodeURIComponent(publicId)}/g/${encodeURIComponent(guestToken)}`;
+}
+
+export async function buildEventDetailsUrlFromConfig(publicId: string, guestToken: string): Promise<string> {
+  const base = await getAppBaseUrl();
+  return `${base}/e/${encodeURIComponent(publicId)}?token=${encodeURIComponent(guestToken)}`;
 }
 
 export async function isEmailConfigured(): Promise<boolean> {
@@ -365,6 +370,170 @@ export async function sendNewGuestNotification(params: NewGuestNotificationParam
   const text = `New guest ${params.guestName} was added to ${params.eventTitle}. View: ${params.manageUrl}`;
   if (cfg.provider === "smtp") return sendViaSmtp({ to: params.hostEmail, from, subject, html, text, cfg });
   if (cfg.provider === "resend") return sendViaResend({ to: params.hostEmail, from, subject, html, text, cfg });
+  return { ok: true };
+}
+
+export type NewCommentNotificationParams = {
+  hostEmail: string;
+  eventTitle: string;
+  authorName: string;
+  content: string;
+  manageUrl: string;
+};
+
+export async function sendNewCommentNotification(params: NewCommentNotificationParams): Promise<SendResult> {
+  const cfg = await getConfig();
+  if (cfg.provider === "none") {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[email] no-op: would send new comment notification to", params.hostEmail);
+    }
+    return { ok: true };
+  }
+  const from = cfg.emailFrom;
+  const subject = `New comment: ${params.authorName} – ${params.eventTitle}`;
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #333; max-width: 500px; margin: 0 auto; padding: 20px;">
+  <p><strong>${escapeHtml(params.authorName)}</strong> posted a comment on <strong>${escapeHtml(params.eventTitle)}</strong>:</p>
+  <blockquote style="margin: 16px 0; padding: 12px; background: #f4f4f5; border-radius: 8px;">${escapeHtml(params.content)}</blockquote>
+  <p><a href="${escapeHtml(params.manageUrl)}" style="display: inline-block; background: #18181b; color: white; padding: 10px 20px; border-radius: 9999px; text-decoration: none; margin-top: 8px;">View event</a></p>
+  <p style="margin-top: 24px; font-size: 14px; color: #666;">Rondivu</p>
+</body>
+</html>`;
+  const text = `${params.authorName} commented on ${params.eventTitle}: "${params.content}"\n\nView: ${params.manageUrl}`;
+  if (cfg.provider === "smtp") return sendViaSmtp({ to: params.hostEmail, from, subject, html, text, cfg });
+  if (cfg.provider === "resend") return sendViaResend({ to: params.hostEmail, from, subject, html, text, cfg });
+  return { ok: true };
+}
+
+export type ReplyToCommentNotificationParams = {
+  recipientEmail: string;
+  recipientName: string;
+  eventTitle: string;
+  replierName: string;
+  originalComment: string;
+  replyContent: string;
+  rsvpUrl: string;
+};
+
+export async function sendReplyToCommentNotification(params: ReplyToCommentNotificationParams): Promise<SendResult> {
+  const cfg = await getConfig();
+  if (cfg.provider === "none") {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[email] no-op: would send reply notification to", params.recipientEmail);
+    }
+    return { ok: true };
+  }
+  if (!params.recipientEmail?.trim()) return { ok: true };
+  const from = cfg.emailFrom;
+  const subject = `${params.replierName} replied to your comment – ${params.eventTitle}`;
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #333; max-width: 500px; margin: 0 auto; padding: 20px;">
+  <p>Hi ${escapeHtml(params.recipientName)},</p>
+  <p><strong>${escapeHtml(params.replierName)}</strong> replied to your comment on <strong>${escapeHtml(params.eventTitle)}</strong>.</p>
+  <p>Your comment:</p>
+  <blockquote style="margin: 8px 0; padding: 12px; background: #f4f4f5; border-radius: 8px;">${escapeHtml(params.originalComment)}</blockquote>
+  <p>${escapeHtml(params.replierName)}'s reply:</p>
+  <blockquote style="margin: 8px 0; padding: 12px; background: #f4f4f5; border-radius: 8px;">${escapeHtml(params.replyContent)}</blockquote>
+  <p><a href="${escapeHtml(params.rsvpUrl)}" style="display: inline-block; background: #18181b; color: white; padding: 10px 20px; border-radius: 9999px; text-decoration: none; margin-top: 8px;">View & reply</a></p>
+  <p style="margin-top: 24px; font-size: 14px; color: #666;">Rondivu</p>
+</body>
+</html>`;
+  const text = `Hi ${params.recipientName},\n\n${params.replierName} replied to your comment on ${params.eventTitle}.\n\nYour comment: "${params.originalComment}"\n\nReply: "${params.replyContent}"\n\nView: ${params.rsvpUrl}`;
+  if (cfg.provider === "smtp") return sendViaSmtp({ to: params.recipientEmail, from, subject, html, text, cfg });
+  if (cfg.provider === "resend") return sendViaResend({ to: params.recipientEmail, from, subject, html, text, cfg });
+  return { ok: true };
+}
+
+export type EventDetailsToGuestParams = {
+  guestName: string;
+  guestEmail: string;
+  eventTitle: string;
+  hostName: string;
+  startTime: Date;
+  location?: string | null;
+  eventDetailsUrl: string;
+  themeColor?: string | null;
+};
+
+export async function sendEventDetailsToGuest(params: EventDetailsToGuestParams): Promise<SendResult> {
+  const cfg = await getConfig();
+  if (cfg.provider === "none") {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[email] no-op: would send event details to", params.guestEmail, "for", params.eventTitle);
+    }
+    return { ok: true };
+  }
+  if (!params.guestEmail?.trim()) {
+    return { ok: true };
+  }
+  const from = cfg.emailFrom;
+  const subject = `Event details: ${params.eventTitle}`;
+  const startStr = params.startTime.toLocaleString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const accentColor = params.themeColor || "#18181b";
+  const locationLine = params.location?.trim()
+    ? `<p><strong>Where:</strong> ${escapeHtml(params.location)}</p>`
+    : "";
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #333; max-width: 500px; margin: 0 auto; padding: 20px;">
+  <p>Hi ${escapeHtml(params.guestName)},</p>
+  <p>Thanks for RSVPing to <strong>${escapeHtml(params.eventTitle)}</strong>!</p>
+  <p><strong>When:</strong> ${escapeHtml(startStr)}</p>
+  ${locationLine}
+  <p>Save this link to view event details, see who&apos;s coming, and leave comments:</p>
+  <p><a href="${escapeHtml(params.eventDetailsUrl)}" style="display: inline-block; background: ${accentColor}; color: white; padding: 10px 20px; border-radius: 9999px; text-decoration: none; margin-top: 8px;">View event details</a></p>
+  <p style="margin-top: 24px; font-size: 14px; color: #666;">Sent by Rondivu</p>
+</body>
+</html>`;
+
+  const text = `
+Hi ${params.guestName},
+
+Thanks for RSVPing to ${params.eventTitle}!
+
+When: ${startStr}
+${params.location?.trim() ? `Where: ${params.location}\n` : ""}
+
+View event details: ${params.eventDetailsUrl}
+
+—
+Sent by Rondivu
+`.trim();
+
+  if (cfg.provider === "smtp") {
+    return sendViaSmtp({
+      to: params.guestEmail.trim().toLowerCase(),
+      from,
+      subject,
+      html,
+      text,
+      cfg,
+    });
+  }
+  if (cfg.provider === "resend") {
+    return sendViaResend({
+      to: params.guestEmail.trim().toLowerCase(),
+      from,
+      subject,
+      html,
+      text,
+      cfg,
+    });
+  }
   return { ok: true };
 }
 

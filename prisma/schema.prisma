@@ -38,9 +38,13 @@ model Event {
   bannerImageUrl String?
   themeColor     String?
 
-  notifyOnRsvpChange   Boolean @default(true)
-  notifyOnNewGuest     Boolean @default(false)
-  showAttendeesToGuests Boolean @default(false)
+  notifyOnRsvpChange    Boolean @default(true)
+  notifyOnNewGuest       Boolean @default(false)
+  notifyOnNewComment     Boolean @default(false)
+  notifyGuestsOnReply   Boolean @default(false)
+  emailGuestsEventDetailsOnRsvp Boolean @default(false)
+  showAttendeesToGuests  Boolean @default(false)
+  allowGuestComments     Boolean @default(false)
 
   createdById String?
   createdBy   User?    @relation("CreatedEvents", fields: [createdById], references: [id], onDelete: SetNull)
@@ -49,6 +53,7 @@ model Event {
   updatedAt   DateTime @updatedAt
 
   guests      Guest[]
+  comments    Comment[]
 
   @@index([publicId])
   @@index([createdById])
@@ -126,6 +131,72 @@ model Guest {
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
+  comments          Comment[]
+  replies           Reply[]
+  reactions         Reaction[]
+  replyReactions    ReplyReaction[]
+
   @@index([eventId])
   @@index([token])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guestId   String
+  guest     Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  content   String   // Plain text, max ~2000 chars
+  createdAt DateTime @default(now())
+
+  replies    Reply[]
+  reactions  Reaction[]
+
+  @@index([eventId])
+  @@index([guestId])
+}
+
+model Reply {
+  id        String   @id @default(cuid())
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  guestId   String
+  guest     Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  content   String   // Plain text, max ~2000 chars
+  createdAt DateTime @default(now())
+
+  reactions ReplyReaction[]
+
+  @@index([commentId])
+  @@index([guestId])
+}
+
+model ReplyReaction {
+  id        String   @id @default(cuid())
+  replyId   String
+  reply     Reply    @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  guestId   String
+  guest     Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  type      String   // thumbs_up | thumbs_down | laugh | heart | sad
+  createdAt DateTime @default(now())
+
+  @@unique([replyId, guestId])
+  @@index([replyId])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  guestId   String
+  guest     Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  type      String   // thumbs_up | thumbs_down | laugh | heart | sad
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, guestId])
+  @@index([commentId])
 }

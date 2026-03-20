@@ -43,6 +43,10 @@ export default async function ManageEventPage({
       notifyOnRsvpChange: true,
       notifyOnNewGuest: true,
       showAttendeesToGuests: true,
+      allowGuestComments: true,
+      notifyOnNewComment: true,
+      notifyGuestsOnReply: true,
+      emailGuestsEventDetailsOnRsvp: true,
       guests: {
         select: {
           id: true,
@@ -56,6 +60,26 @@ export default async function ManageEventPage({
           guestMessage: true,
           token: true,
           note: true,
+        },
+        orderBy: { createdAt: "asc" },
+      },
+      comments: {
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          guest: { select: { name: true } },
+          replies: {
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              guest: { select: { name: true } },
+              reactions: { select: { type: true } },
+            },
+            orderBy: { createdAt: "asc" },
+          },
+          reactions: { select: { type: true } },
         },
         orderBy: { createdAt: "asc" },
       },
@@ -138,6 +162,7 @@ export default async function ManageEventPage({
             Edit event details
           </summary>
           <EditEventForm
+            key={`edit-${event.notifyOnRsvpChange}-${event.notifyOnNewGuest}-${event.showAttendeesToGuests}-${event.allowGuestComments}-${event.notifyOnNewComment}-${event.notifyGuestsOnReply}-${event.emailGuestsEventDetailsOnRsvp}`}
             publicId={publicId}
             adminKey={key}
             initialTitle={event.title}
@@ -146,8 +171,83 @@ export default async function ManageEventPage({
             initialNotifyOnRsvpChange={event.notifyOnRsvpChange}
             initialNotifyOnNewGuest={event.notifyOnNewGuest}
             initialShowAttendeesToGuests={event.showAttendeesToGuests}
+            initialAllowGuestComments={event.allowGuestComments}
+            initialNotifyOnNewComment={event.notifyOnNewComment}
+            initialNotifyGuestsOnReply={event.notifyGuestsOnReply}
+            initialEmailGuestsEventDetailsOnRsvp={event.emailGuestsEventDetailsOnRsvp}
           />
         </details>
+
+        {event.allowGuestComments && event.comments.length > 0 ? (
+          <div className="mt-8 rounded-2xl border border-zinc-200 bg-zinc-50 p-6 dark:border-white/10 dark:bg-white/5">
+            <h2 className="text-sm font-medium">Guest comments</h2>
+            <div className="mt-3 space-y-4">
+              {event.comments.map((c) => {
+                const reactions = c.reactions ?? [];
+                const replies = c.replies ?? [];
+                const reactionCounts = reactions.reduce(
+                  (acc, r) => {
+                    acc[r.type] = (acc[r.type] ?? 0) + 1;
+                    return acc;
+                  },
+                  {} as Record<string, number>
+                );
+                const emoji: Record<string, string> = {
+                  thumbs_up: "👍",
+                  thumbs_down: "👎",
+                  laugh: "😂",
+                  heart: "❤️",
+                  sad: "😢",
+                };
+                return (
+                  <div key={c.id} className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-white/10 dark:bg-zinc-950">
+                    <p className="text-sm font-medium">{c.guest.name}</p>
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-300">{c.content}</p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {new Date(c.createdAt).toLocaleDateString()}
+                    </p>
+                    {reactions.length > 0 ? (
+                      <div className="mt-2 flex gap-2">
+                        {Object.entries(reactionCounts).map(([type, n]) => (
+                          <span key={type} className="text-sm">
+                            {emoji[type] ?? type} {n}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                    {replies.length > 0 ? (
+                      <div className="mt-3 ml-3 space-y-2 border-l-2 border-zinc-200 pl-3 dark:border-white/10">
+                        {replies.map((r) => {
+                          const rr = r.reactions ?? [];
+                          const rc = rr.reduce(
+                            (acc, x) => {
+                              acc[x.type] = (acc[x.type] ?? 0) + 1;
+                              return acc;
+                            },
+                            {} as Record<string, number>
+                          );
+                          return (
+                            <div key={r.id}>
+                              <p className="text-sm font-medium">{r.guest.name}</p>
+                              <p className="mt-0.5 whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-400">{r.content}</p>
+                              {rr.length > 0 ? (
+                                <div className="mt-1 flex gap-2 text-xs">
+                                  {Object.entries(rc).map(([type, n]) => (
+                                    <span key={type}>{emoji[type] ?? type} {n}</span>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-8 grid gap-4 md:grid-cols-5">
           <Stat label="Invited" value={counts.invited} />
