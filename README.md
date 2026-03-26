@@ -121,9 +121,12 @@ Open `http://localhost:3000`. On first visit to Settings, Create event, or an ev
 docker compose up --build
 ```
 
-- App runs on port 3000
-- Data persists in the `rondivu_data` volume
-- DB path: `/data/dev.db`
+- App runs on port 3000 (binds to `0.0.0.0` inside the container)
+- The `rondivu_data` volume mounts at `/data`: SQLite at `/data/dev.db` and banner uploads at `/data/uploads/events`
+- Runs database migrations on startup, then the Next.js standalone server as a non-root user
+- Set `APP_URL` in `docker-compose.yml` (or your orchestrator) to your public HTTPS origin so email links are correct
+
+Build the image on Linux (or Docker Desktop with Linux containers). If `next build` with `output: "standalone"` errors on Windows due to path characters in traced files, use `docker build` or CI instead.
 
 ## Configuration
 

@@ -4,7 +4,11 @@ services:
     ports:
       - "3000:3000"
     environment:
+      NODE_ENV: production
       DATABASE_URL: "file:/data/dev.db"
+      UPLOAD_DIR: "/data/uploads/events"
+      # Public base URL for links in emails (set for production):
+      # APP_URL: "https://rondivu.example.com"
     volumes:
       - rondivu_data:/data
 

@@ -1,7 +1,8 @@
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
-const UPLOAD_DIR = "public/uploads/events";
+import { getEventBannerUploadDir } from "@/lib/uploadPaths";
+
 const MAX_SIZE = 1024 * 1024; // 1MB (Next.js default body limit)
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -13,7 +14,7 @@ export async function saveBannerImage(file: File): Promise<string | null> {
   const safeExt = ["jpg", "jpeg", "png", "webp", "gif"].includes(ext) ? ext : "jpg";
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${safeExt}`;
 
-  const dir = path.join(process.cwd(), UPLOAD_DIR);
+  const dir = getEventBannerUploadDir();
   await mkdir(dir, { recursive: true });
 
   const bytes = await file.arrayBuffer();

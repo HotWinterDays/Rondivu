@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+  outputFileTracingIncludes: {
+    "/*": [
+      "./node_modules/.prisma/client/**/*",
+      "./prisma/schema.prisma",
+      "./prisma/migrations/**/*",
+    ],
+  },
   reactCompiler: true,
   experimental: {
     serverActions: {
