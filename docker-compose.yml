@@ -1,5 +1,8 @@
+name: rondivu
+
 services:
   app:
+    image: rondivu:latest
     build: .
     ports:
       - "3000:3000"

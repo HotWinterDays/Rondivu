@@ -121,6 +121,7 @@ Open `http://localhost:3000`. On first visit to Settings, Create event, or an ev
 docker compose up --build
 ```
 
+- Compose project name is **rondivu** and the image is tagged **`rondivu:latest`** (independent of the folder you cloned into)
 - App runs on port 3000 (binds to `0.0.0.0` inside the container)
 - The `rondivu_data` volume mounts at `/data`: SQLite at `/data/dev.db` and banner uploads at `/data/uploads/events`
 - Runs database migrations on startup, then the Next.js standalone server as a non-root user
