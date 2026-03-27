@@ -33,12 +33,13 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# Full node_modules so Prisma CLI (migrate) has all deps (effect, @prisma/config, …); standalone trace is a subset.
+COPY --from=builder /app/node_modules ./node_modules
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh \
+# Strip Windows CRLF so shebang works (avoids "exec …: no such file or directory" on Linux).
+RUN sed -i 's/\r$//' /docker-entrypoint.sh \
+  && chmod +x /docker-entrypoint.sh \
   && chown -R nextjs:nodejs /app
 
 EXPOSE 3000
@@ -46,5 +47,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=50s --retries=3 \
   CMD wget -q -O /dev/null http://127.0.0.1:3000/ || exit 1
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT ["sh", "/docker-entrypoint.sh"]
 CMD ["sh", "-c", "npx prisma migrate deploy && exec node server.js"]
