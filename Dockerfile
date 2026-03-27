@@ -10,7 +10,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Root layout calls Prisma during prerender; Next build needs a real schema (throwaway DB).
+ENV DATABASE_URL="file:/tmp/docker-build.db"
 RUN npx prisma generate
+RUN npx prisma migrate deploy
 RUN npm run build
 
 FROM node:20-alpine AS runner
